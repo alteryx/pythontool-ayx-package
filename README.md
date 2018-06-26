@@ -1,0 +1,1 @@
+Python package to interact with Alteryx (eg, read from - and write to - alteryx datastreams, etc)
