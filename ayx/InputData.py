@@ -1,110 +1,134 @@
 import os
+import json
 import sqlite3
 import pandas as pd
 
 
-class InputData:
-    def __init__(self):
-
-        self.sqlite_relative_filepath = 'input_data.sqlite'
-        # self.sqlite_relative_filepath = 'test.sqlite'
-        self.input_connection_metadata_table = 'input_connection_metadata'
-        self.sqlite_absolute_filepath = os.path.abspath(self.sqlite_relative_filepath)
+# return a string containing a msg followed by a filepath
+def fileErrorMsg(msg, filepath=None):
+    if filepath == None:
+        raise ReferenceError("No filepath provided")
+    return ''.join([msg, ' (', filepath, ')'])
 
 
-    # check if sqlite file exists. if not, throw error
-    def inputDataExists(self):
-        if os.path.isfile(self.sqlite_absolute_filepath):
-            return True
-        else:
+# check if file exists. if not, throw error
+def fileExists(filepath, throw_error=None):
+    # default is to not throw an error
+    if throw_error == None:
+        throw_error = False
+    # if file exists, return true
+    if os.path.isfile(filepath):
+        return True
+    else:
+        if throw_error:
             raise FileNotFoundError(
-                self.dbCheckError('Input data file does not exist')
+                self.fileErrorMsg('Input data file does not exist', filepath)
                 )
-            return False
+        return False
 
 
-    # return a msg followed by db absolute path
-    def dbCheckError(self, msg):
-        return ''.join([msg, ' (', self.sqlite_absolute_filepath, ')'])
+def tableNameIsValid(table_name):
+    valid = True
+    stripped = ''.join( chr for chr in table_name if (chr.isalnum() or chr=='_'))
+    if stripped != table_name:
+        valid = False
+    elif not(table_name[0].isalpha()):
+        valid = False
+    return valid
 
-    # open database connection
-    def openConnection(self):
-        if self.inputDataExists():
+
+class SqliteDb:
+    def __init__(self, dbPath=None):
+
+        # if no dbPath specified, throw error
+        if dbPath == None:
+            raise ReferenceError("No database specified to open")
+
+        # set object attributes
+        self.filepath = os.path.abspath(dbPath)
+        self.connection = None
+        self.setConnection() # ==> self.connection
+
+
+    def setConnection(self):
+        if not(hasattr(self, 'connection')) or (type(self.connection) is not sqlite3.Connection):
+            self.connection = self.returnConnection()
+
+    # open database connection, verify that we can execute sql statements, confirm only 1 table
+    def returnConnection(self):
+        if fileExists(self.filepath, throw_error=True):
+            # open connection and attempt to run a quick arbitrary query
+            # to confirm that it is a valid sqlite db
             try:
-                self.db = sqlite3.connect(self.sqlite_absolute_filepath)
+                connection = sqlite3.connect(self.filepath)
+                connection.execute("select * from sqlite_master limit 1")
+                return connection
             except:
-                raise ConnectionRefusedError(
-                    self.dbCheckError('Unable to connect to input data')
+                connection.close()
+                raise ConnectionError(
+                    self.fileErrorMsg('Unable to connect to input data', self.filepath)
                     )
+
+
+    # return table names in a list
+    def getTableNames(self):
+        return pd.read_sql_query(
+            "select name from sqlite_master where type='table'",
+            self.connection
+            )['name'].tolist()
+
 
     # close database connection
     def closeConnection(self):
-        self.db.close()
-        del self.db
+        if hasattr(self, 'connection'):
+            self.connection.close()
+            self.connection = None
 
-    # get list of table names in sqlite db
-    def getDbTableNames(self):
-        self.openConnection()
-        # get tables from db -> pandas df -> python list
-        try:
+    # if one table exists, return its name, otherwise throw error
+    def getSingularTable(self):
+            tables = self.getTableNames()
+            table_count = len(tables)
+            # if no tables exist throw error
+            if table_count == 0:
+                raise ValueError(fileErrorMsg(
+                    'Db does not contain any tables',
+                    self.filepath
+                    ))
+            # if multiple tables exist, throw error
+            elif table_count > 1:
+                raise ValueError(fileErrorMsg(
+                    'Db should only contain 1 table, but instead has multiple: {}'.format(tables),
+                    self.filepath
+                    ))
+            # return table name only if only one table exists
+            elif table_count == 1:
+                return tables[0]
+
+
+    def getData(self, table=None):
+        # if no table specified, check to see if there is only table and use that
+        if table == None:
+            table = self.getSingularTable()
+        # now that the table name has been retrieved, get the data as pandas df
+        # (but first check that table name is valid to avoid sql injection)
+        if tableNameIsValid(table):
             return pd.read_sql_query(
-            "select name from sqlite_master where type='table'",
-            self.db
-            )['name'].tolist()
-        except:
-            raise TypeError(self.dbCheckError("Not a valid sqlite database"))
-
-    def getDbTableColumns(self, table_name):
-        self.openConnection()
-        try:
-            return pd.read_sql_query(
-            'PRAGMA table_info({})'.format(table_name),
-            self.db
-            )['name'].tolist()
-        except:
-            raise LookupError(self.dbCheckError(
-                'Unable to lookup column names on table "{}"'.format(table_name)
-                ))
-
-
-    # get mapping of connection name to table name from input metadata
-    def getInputConnections(self):
-        # check if input metadata exists
-        if not(self.input_connection_metadata_table in self.getDbTableNames()):
-            raise LookupError(self.dbCheckError(
-                'Input db is missing connection metadata table: {}'.format(
-                    self.input_connection_metadata_table
-                    )
-                ))
-        else:
-            # get list of columns in metadata table from db
-            metadata_columns = self.getDbTableColumns(self.input_connection_metadata_table)
-            # set expected column names in metadata table
-            metadata_column_input_connection_name = 'input_connection_name'
-            metadata_column_table = 'table'
-            expected_columns = [
-                metadata_column_input_connection_name,
-                metadata_column_table
-                ]
-            # check that expected columns exist
-            for col in expected_columns:
-                if not(col in metadata_columns):
-                    raise LookupError(self.dbCheckError(
-                        'Expected column "{}" not in table "{}"'.format(
-                            col,
-                            self.input_connection_metadata_table
-                            )
-                        ))
-            # get the input connection metadata values ...
-            metadata_df = pd.read_sql_query(
-                'select * from {}'.format(self.input_connection_metadata_table),
-                self.db
+                'select * from {}'.format(table),
+                self.connection,
                 )
-            # and put metadata values in a dictionary {connection name: table}
-            metadata_dict = {}
-            for row in metadata_df.to_dict('records'):
-                input_connection_value = row[metadata_column_input_connection_name]
-                table_name_value = row[metadata_column_table]
-                metadata_dict[input_connection_value] = table_name_value
-            # return lookup dictionary
-            return metadata_dict
+        else:
+            raise NameError('Invalid table name ({})'.format(table))
+
+
+
+class InputData:
+    def __init__(self):
+        self.config_relative_path = 'config.ini'
+        self.config_absolute_path = os.path.abspath(self.config_relative_path)
+
+
+
+
+
+# with open('config.ini') as f:
+#     data = json.load(f)
