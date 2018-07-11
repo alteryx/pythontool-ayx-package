@@ -58,7 +58,13 @@ class SqliteDb:
         # set object attributes
         self.filepath = os.path.abspath(dbPath)
         self.connection = None
-        # self.openConnection() # ==> self.connection
+
+    def __enter__(self):
+        self.openConnection()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.closeConnection()
 
     # open the connection
     def openConnection(self):
@@ -86,7 +92,8 @@ class SqliteDb:
 
     # open database connection, verify that we can execute sql statements
     def __returnConnection(self):
-        if fileExists(self.filepath, throw_error=True, msg='Unable to connect to input data'):
+        error_msg = 'Unable to connect to input data'
+        if fileExists(self.filepath, throw_error=True, msg=error_msg):
             # open connection and attempt to run a quick arbitrary query
             # to confirm that it is a valid sqlite db
             try:
@@ -98,7 +105,7 @@ class SqliteDb:
                     connection.close()
                 except:
                     pass
-                raise ConnectionError(self.fileErrorMsg(msg, self.filepath))
+                raise ConnectionError(fileErrorMsg(error_msg, self.filepath))
 
 
     # return table names in a list
@@ -166,7 +173,13 @@ class SqliteDb:
 
 
 class CachedData:
-    def __init__(self, debug=None):
+    def __init__(self, config_filepath=None, debug=None):
+
+        # default value for config filepath
+        if config_filepath==None:
+            config_filepath = 'config.ini'
+        elif type(config_filepath) is not str:
+            raise TypeError('config filepath must be a string')
 
         # check debug parameter
         if debug==None:
@@ -177,8 +190,15 @@ class CachedData:
             self.debug = debug
 
         # set attributes
-        self.config_relative_path = 'config.ini'
-        self.config_absolute_path = os.path.abspath(self.config_relative_path)
+        self.config_filepath = config_filepath
+        self.config_absolute_path = os.path.abspath(self.config_filepath)
+
+        # throw error if unable to load input file mapping from config
+        try:
+            self.__input_file_map()
+        except:
+            print('Unable to load input data connection config')
+            raise
 
     # mapping of connection name to filepath {input_connection_name: filepath}
     def __input_file_map(self):
@@ -199,12 +219,42 @@ class CachedData:
                     print('Config file found -- {}'.format(self.config_absolute_path))
                 with open(self.config_absolute_path) as f:
                     config = json.load(f)
-                    input_map = config['input_connections']
+                # config is the raw json, input_map is specifically the input mapping
+                # (eg, if the mapping is nested below the parent node of a larger config)
+                input_map = config # currently, config contains only input mappings
+                # check if file is in expected format
+                self.__verifyInputConfigStructure(input_map)
                 return input_map
             except:
                 print('Error: input connection config file is not in the expected format')
                 raise
 
+    # verify that the config json is in the expected structure
+    def __verifyInputConfigStructure(self, d):
+
+        example_structure = '\n'.join([
+            '{',
+            '  "#1": "tmp1.sqlite", ',
+            '  "#2": "tmp2.sqlite", ',
+            '  "union": "tmp3.sqlite" ',
+            '}'
+            ])
+
+        def configStructureErrorMsg(msg):
+            return ''.join([
+                msg, '\n\n',
+                'Example:', '\n',
+                example_structure
+            ])
+
+        if type(d) is not dict:
+            raise TypeError('Input config must be a python dict')
+        elif not(all(isinstance(item, str) for item in d.keys())):
+            raise ValueError('All input connection names must be strings')
+        elif not(all(isinstance(d[item], str) for item in d.keys())):
+            raise ValueError('All filenames must be strings')
+        else:
+            return True
 
     def read(self, incoming_connection_name):
 
@@ -239,21 +289,21 @@ class CachedData:
         else:
             input_data_filepath = input_file_map[incoming_connection_name]
             # create custom sqlite object
-            db = SqliteDb(input_data_filepath, debug=self.debug)
-            # open the connection to the sql db
-            db.openConnection()
-            # get the data from the sql db (if only one table exists, no need to specify the table name)
-            data = db.getData()
-            # print message about getting the data
-            print(''.join(
-                    ['Input connection "{}" read in successfully from cached data'.format(
-                        incoming_connection_name
-                        )]
-                ))
-            # close the connection
-            db.closeConnection()
-            # return the data
-            return data
+            with SqliteDb(input_data_filepath, debug=self.debug) as db:
+                msg_action = 'reading input data "{}"'.format(
+                    incoming_connection_name
+                    )
+                try:
+                    # get the data from the sql db (if only one table exists, no need to specify the table name)
+                    data = db.getData()
+                    # print success message
+                    print(''.join(['SUCCESS: ', msg_action]))
+                    # return the data
+                    return data
+                except:
+                    print(''.join(['ERROR: ', msg_action]))
+                    raise
+
 
     def write(self, pandas_df, outgoing_connection_number):
 

@@ -2,6 +2,7 @@ name: ayx
 
 dependencies:
   - pandas
+  - sqlalchemy
   - pip:
     - nose
     - pylint

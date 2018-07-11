@@ -1,7 +1,7 @@
 import os
 from unittest import TestCase
 from ayx.CachedData import SqliteDb
-from ayx.tests.datafiles import getTestFileName
+from ayx.tests.testdata.datafiles import getTestFileName
 
 
 class TestSqliteInit(TestCase):

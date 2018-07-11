@@ -2,7 +2,7 @@ import os
 import sqlite3
 from unittest import TestCase
 from ayx.CachedData import SqliteDb
-from ayx.tests.datafiles import getTestFileName
+from ayx.tests.testdata.datafiles import getTestFileName
 
 
 class TestSqliteConnectionOpen(TestCase):

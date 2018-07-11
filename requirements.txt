@@ -1,4 +1,5 @@
 pandas
+SQLAlchemy
 nose
 pylint
 pyqt5
