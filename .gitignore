@@ -12,3 +12,8 @@ __pycache__
 docs/
 .DS_Store
 .ipynb_checkpoints/
+
+
+#virtual env
+/env/
+/venv/

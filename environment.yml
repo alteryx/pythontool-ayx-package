@@ -1,0 +1,8 @@
+name: ayx
+
+dependencies:
+  - pandas
+  - pip:
+    - nose
+    - pylint
+    - pyqt5
