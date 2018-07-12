@@ -177,7 +177,9 @@ class CachedData:
 
         # default value for config filepath
         if config_filepath==None:
-            config_filepath = 'config.ini'
+            # config_filepath = 'config.ini'
+            config_filepath = 'jupyterPipes.json'
+
         elif type(config_filepath) is not str:
             raise TypeError('config filepath must be a string')
 

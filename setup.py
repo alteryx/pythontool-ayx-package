@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ayx',
-      version='0.0.1',
+      version='0.0.2',
       description='python package for alteryx designer',
       long_description=readme(),
       url='',
@@ -15,7 +15,7 @@ setup(name='ayx',
       test_suite='nose.collector',
       packages=['ayx'],
       install_requires=[
-          'markdown',
-      ],
-      zip_safe=False)
-     )
+          'pandas'
+          ],
+      zip_safe=False
+      )

@@ -71,6 +71,13 @@ datafiles = {
         'tables': [],
         'notes': 'config file that points to 3 input sqlite files'
     },
+	'jupyter_pipes_config': {
+        'filename': 'jupyterPipes.json',
+        'type': 'json',
+        'valid_file': True,
+        'tables': [],
+        'notes': 'config file that points to 3 input sqlite files (#1 written by engine code)'
+    },
 }
 
 def getValidSqliteFiles():
