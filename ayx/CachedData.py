@@ -2,61 +2,36 @@ import os
 import json
 import sqlite3
 import pandas as pd
+from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, deleteFile, isString
 
 
-# return a string containing a msg followed by a filepath
-def fileErrorMsg(msg, filepath=None):
-    if filepath == None:
-        raise ReferenceError("No filepath provided")
-    return ''.join([msg, ' (', filepath, ')'])
-
-
-# check if file exists. if not, throw error
-def fileExists(filepath, throw_error=None, msg=None):
-    # default is to not throw an error
-    if throw_error == None:
-        throw_error = False
-    if msg == None:
-        msg = 'Input data file does not exist'
-    # if file exists, return true
-    if os.path.isfile(filepath):
-        return True
-    else:
-        if throw_error:
-            raise FileNotFoundError(fileErrorMsg(msg, filepath))
-        return False
-
-
-def tableNameIsValid(table_name):
-    stripped = ''.join( chr for chr in table_name if (chr.isalnum() or chr=='_'))
-    if stripped != table_name:
-        valid = False
-        reason = 'invalid characters (only alphanumeric and underscores)'
-    elif not(table_name[0].isalpha()):
-        valid = False
-        reason = 'first character must be a letter'
-    else:
-        valid = True
-    return valid
 
 
 class SqliteDb:
-    def __init__(self, dbPath=None, debug=None):
+    def __init__(self, db_path=None, create_new=None, debug=None):
 
-        # if no dbPath specified, throw error
-        if dbPath == None:
+        # if no db_path specified, throw error
+        if db_path is None:
             raise ReferenceError("No database specified to open")
 
-        # check debug parameter
-        if debug==None:
-            self.debug = False
-        elif type(debug) is not bool:
-            raise TypeError('debug parameter must True or False')
+        # default for create_new is false (throw error if file doesnt exist)+++
+        if create_new is None:
+            self.create_new = False
+        elif type(create_new) is bool:
+            self.create_new = create_new
         else:
+            raise TypeError("create_new parameter must be boolean")
+
+        # check debug parameter
+        if debug is None:
+            self.debug = False
+        elif type(debug) is bool:
             self.debug = debug
+        else:
+            raise TypeError('debug parameter must True or False')
 
         # set object attributes
-        self.filepath = os.path.abspath(dbPath)
+        self.filepath = os.path.abspath(db_path)
         self.connection = None
 
     def __enter__(self):
@@ -81,7 +56,7 @@ class SqliteDb:
     def __isConnectionOpen(self, error_if_closed=None):
         if self.debug:
             print('Connection status: {}'.format(self.connection))
-        if error_if_closed==None:
+        if error_if_closed is None:
             error_if_closed = False
         if hasattr(self, 'connection') and type(self.connection) is sqlite3.Connection:
             return True
@@ -93,7 +68,11 @@ class SqliteDb:
     # open database connection, verify that we can execute sql statements
     def __returnConnection(self):
         error_msg = 'Unable to connect to input data'
-        if fileExists(self.filepath, throw_error=True, msg=error_msg):
+        # if file exists, and not creating a new db, then throw error
+        if (
+            fileExists(self.filepath, throw_error=not(self.create_new), msg=error_msg) or
+            (self.create_new)
+            ):
             # open connection and attempt to run a quick arbitrary query
             # to confirm that it is a valid sqlite db
             try:
@@ -150,12 +129,11 @@ class SqliteDb:
             elif table_count == 1:
                 return tables[0]
 
-
     def getData(self, table=None):
         self.__isConnectionOpen(error_if_closed=True)
 
         # if no table specified, check to see if there is only table and use that
-        if table == None:
+        if table is None:
             table = self.getSingularTable()
 
         # now that the table name has been retrieved, get the data as pandas df
@@ -163,20 +141,47 @@ class SqliteDb:
         if tableNameIsValid(table):
             if self.debug:
                 print('Attempting to get data from table "{}"'.format(table))
+            try:
+                return pd.read_sql_query(
+                    'select * from {}'.format(table),
+                    self.connection,
+                    )
+                if self.debug:
+                    print(fileErrorMsg(
+                        'Success reading input table "{}" '.format(table),
+                        self.filepath))
+            except:
+                print(fileErrorMsg(
+                    'Error: unable to read input table "{}"'.format(table),
+                    self.filepath))
+                raise
 
-            return pd.read_sql_query(
-                'select * from {}'.format(table),
-                self.connection,
-                )
         else:
             raise NameError('Invalid table name ({})'.format(table))
+
+
+    def writeData(self, pandas_df, table):
+        if self.debug:
+            print('Attempting to write data to table "{}"'.format(table))
+        try:
+            pandas_df.to_sql(table, self.connection, if_exists='replace', index=False)
+            if self.debug:
+                print(fileErrorMsg(
+                    'Success writing output table "{}"'.format(table),
+                    self.filepath))
+            return pandas_df
+        except:
+            print(fileErrorMsg(
+                'Error: unable to write output table "{}"'.format(table),
+                self.filepath))
+            raise
 
 
 class CachedData:
     def __init__(self, config_filepath=None, debug=None):
 
         # default value for config filepath
-        if config_filepath==None:
+        if config_filepath is None:
             # config_filepath = 'config.ini'
             config_filepath = 'jupyterPipes.json'
 
@@ -184,12 +189,12 @@ class CachedData:
             raise TypeError('config filepath must be a string')
 
         # check debug parameter
-        if debug==None:
+        if debug is None:
             self.debug = False
-        elif type(debug) is not bool:
-            raise TypeError('debug parameter must True or False')
-        else:
+        elif type(debug) is bool:
             self.debug = debug
+        else:
+            raise TypeError('debug parameter must True or False')
 
         # set attributes
         self.config_filepath = config_filepath
@@ -325,12 +330,31 @@ class CachedData:
         # error if connection number is not between 1 and 5
         elif outgoing_connection_number < 1 or outgoing_connection_number > 5:
             raise ValueError('The outgoing connection number must be an integer between 1 and 5')
-        elif pandas_df == None:
+        elif pandas_df is None:
             raise TypeError('A pandas dataframe is required for passing data to outgoing connections in Alteryx')
-        elif type(pandas_df) is not pandas.core.frame.DataFrame:
+        elif type(pandas_df) is not pd.core.frame.DataFrame:
             raise TypeError('Currently only pandas dataframes can be used to pass data to outgoing connections in Alteryx')
         else:
-            pandas_df.to_sql('data', disk_engine, if_exists='append')
+            # create custom sqlite object
+            with SqliteDb(
+                'output_{}.sqlite'.format(outgoing_connection_number),
+                create_new=True,
+                debug=self.debug
+                ) as db:
+                msg_action = 'writing outgoing connection data {}'.format(
+                    outgoing_connection_number
+                    )
+                try:
+                    # get the data from the sql db (if only one table exists, no need to specify the table name)
+                    data = db.writeData(pandas_df, 'data')
+                    # print success message
+                    print(''.join(['SUCCESS: ', msg_action]))
+                    # return the data
+                    return data
+                except:
+                    print(''.join(['ERROR: ', msg_action]))
+                    raise
+
 
     def getIncomingConnectionNames(self):
         return list(self.__input_file_map().keys())

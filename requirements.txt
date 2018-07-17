@@ -1,5 +1,2 @@
-pandas
-SQLAlchemy
-nose
-pylint
-pyqt5
+setuptools==40.0.0
+pandas==0.23.3

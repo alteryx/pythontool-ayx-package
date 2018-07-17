@@ -3,6 +3,7 @@ name: ayx
 dependencies:
   - pandas
   - sqlalchemy
+  - jupyter
   - pip:
     - nose
     - pylint

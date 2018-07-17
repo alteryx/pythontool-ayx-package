@@ -20,3 +20,7 @@ docs/
 #virtual env
 /env/
 /venv/
+/*env/
+
+# temporary (unnamed) ipython notebooks
+Untitled*.ipynb

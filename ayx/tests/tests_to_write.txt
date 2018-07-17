@@ -1,0 +1,8 @@
+- read/write/read:
+  read data: Alteryx.read("#1")
+  change data
+  read data: Alteryx.read("#1") -- do results show changed data?
+
+- write data to new file
+
+- overwrite data with existing file
