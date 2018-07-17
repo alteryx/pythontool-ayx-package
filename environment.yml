@@ -4,6 +4,7 @@ dependencies:
   - pandas
   - sqlalchemy
   - jupyter
+  - pywin32
   - pip:
     - nose
     - pylint

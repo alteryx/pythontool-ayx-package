@@ -25,7 +25,7 @@ pip wheel -r deps\deps.txt -w deps\wheels
 REM :: delete deps.txt
 del ".\deps\deps.txt" /s /q
 REM :: install nosetests to virtualenv so that we can run all tests on the package
-pip install nosetests
+pip install nose
 REM :: run nosetests
 nosetests
 
@@ -51,7 +51,7 @@ SET drive=%dest:~0,2%
 REM :: get path to origin
 SET origin=%cd%\deps
 REM :: delete all files in destination folder (retain folder structure though)
-del "%dest%\deps\*" /s /q
+del "%dest%\*" /s /q
 REM :: copy files from origin to destination
 xcopy "%origin%\*" "%dest%" /s /i
 

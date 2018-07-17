@@ -1,2 +1,7 @@
-setuptools==40.0.0
-pandas==0.23.3
+pandas
+sqlalchemy
+jupyter
+pywin32
+nose
+pylint
+pyqt5

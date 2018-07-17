@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ayx',
-      version='0.0.3',
+      version='0.0.4',
       description='python package for alteryx designer',
       long_description=readme(),
       url='',
@@ -17,7 +17,8 @@ setup(name='ayx',
       install_requires=[
           'pandas',
 		  'SQLAlchemy',
-		  'jupyter'
+		  'jupyter',
+          'pywin32'
           ],
       zip_safe=False
       )
