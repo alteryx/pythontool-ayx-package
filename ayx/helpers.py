@@ -1,4 +1,5 @@
-import os, string
+import os
+import string
 
 
 # return a string containing a msg followed by a filepath
