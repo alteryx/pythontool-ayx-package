@@ -319,7 +319,6 @@ class CachedData:
                 outgoing_connection_number
                 ))
 
-        data_output_successfully = False
         msg_prefix = 'Alteryx.write(int): '
         # error if connection number is not an int
         if not isinstance(outgoing_connection_number, int):
