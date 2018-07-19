@@ -2,7 +2,7 @@ import os
 import json
 import sqlite3
 import pandas as pd
-from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, deleteFile, isString
+from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid
 
 
 
