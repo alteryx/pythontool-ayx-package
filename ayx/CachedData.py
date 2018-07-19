@@ -283,7 +283,7 @@ class CachedData:
         if not isinstance(incoming_connection_name, str):
             raise TypeError(''.join(
                 [msg_prefix,
-                'Input connection name must be a string value. (eg, "#1")']
+                 'Input connection name must be a string value. (eg, "#1")']
                 ))
         # error if connection name is not a named key in the config json (dict)
         elif incoming_connection_name not in input_file_map:
@@ -325,7 +325,7 @@ class CachedData:
         if not isinstance(outgoing_connection_number, int):
             raise TypeError(''.join(
                 [msg_prefix,
-                'The outgoing connection number must be an integer value.']
+                 'The outgoing connection number must be an integer value.']
                 ))
         # error if connection number is not between 1 and 5
         elif outgoing_connection_number < 1 or outgoing_connection_number > 5:
