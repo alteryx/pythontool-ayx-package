@@ -43,7 +43,7 @@ class SqliteDb:
 
     # open the connection
     def openConnection(self):
-        if not(self.__isConnectionOpen()):
+        if not self.__isConnectionOpen():
             if self.debug:
                 print('Attempting to open connection to {}'.format(self.filepath))
             self.connection = self.__returnConnection()
