@@ -28,7 +28,7 @@ def tableNameIsValid(table_name):
     if isString(table_name):
         # stripped = ''.join( chr for chr in table_name if (chr.isalnum() or chr=='_'))
         valid_chars = ''.join([string.ascii_letters, string.digits])
-        stripped = ''.join( chr for chr in table_name if (chr in valid_chars or chr=='_'))
+        stripped = ''.join(chr for chr in table_name if (chr in valid_chars or chr == '_'))
         if stripped != table_name:
             valid = False
             reason = 'invalid characters (only alphanumeric and underscores)'
