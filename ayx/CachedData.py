@@ -141,7 +141,7 @@ class SqliteDb:
             if self.debug:
                 print('Attempting to get data from table "{}"'.format(table))
             try:
-                return pd.read_sql_query(
+                query_result = pd.read_sql_query(
                     'select * from {}'.format(table),
                     self.connection,
                     )
@@ -149,6 +149,7 @@ class SqliteDb:
                     print(fileErrorMsg(
                         'Success reading input table "{}" '.format(table),
                         self.filepath))
+                return query_result
             except:
                 print(fileErrorMsg(
                     'Error: unable to read input table "{}"'.format(table),
