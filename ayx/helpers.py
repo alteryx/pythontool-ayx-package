@@ -37,7 +37,8 @@ def tableNameIsValid(table_name):
             reason = 'first character must be a letter'
         else:
             valid = True
-        return valid
+            reason = None
+        return valid, reason
     else:
         raise TypeError('table name must be a string')
 

@@ -137,7 +137,8 @@ class SqliteDb:
 
         # now that the table name has been retrieved, get the data as pandas df
         # (but first check that table name is valid to avoid sql injection)
-        if tableNameIsValid(table):
+        table_valid = tableNameIsValid(table)
+        if table_valid[0]:
             if self.debug:
                 print('Attempting to get data from table "{}"'.format(table))
             try:
@@ -157,7 +158,11 @@ class SqliteDb:
                 raise
 
         else:
-            raise NameError('Invalid table name ({})'.format(table))
+            raise NameError(''.join([
+                'Invalid table name ({})'.format(table),
+                'Reason: ',
+                table_valid[1]
+                ]))
 
 
     def writeData(self, pandas_df, table):
