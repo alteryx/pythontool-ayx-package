@@ -46,7 +46,7 @@ def deleteFile(filepath, debug=None):
     # set default for debug
     if debug is None:
         debug = False
-    elif type(debug) is not bool:
+    elif not isinstance(debug, bool):
         raise TypeError('debug value must be True or False')
 
     # if file exists, attempt to delete it
@@ -61,4 +61,4 @@ def deleteFile(filepath, debug=None):
             print(fileErrorMsg("Success: file does no", filepath))
 
 def isString(var):
-    return (type(var) is str)
+    return isinstance(var, str)

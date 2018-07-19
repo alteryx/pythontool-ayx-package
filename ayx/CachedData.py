@@ -17,7 +17,7 @@ class SqliteDb:
         # default for create_new is false (throw error if file doesnt exist)+++
         if create_new is None:
             self.create_new = False
-        elif type(create_new) is bool:
+        elif isinstance(create_new, bool):
             self.create_new = create_new
         else:
             raise TypeError("create_new parameter must be boolean")
@@ -25,7 +25,7 @@ class SqliteDb:
         # check debug parameter
         if debug is None:
             self.debug = False
-        elif type(debug) is bool:
+        elif isinstance(debug, bool):
             self.debug = debug
         else:
             raise TypeError('debug parameter must True or False')
@@ -58,7 +58,7 @@ class SqliteDb:
             print('Connection status: {}'.format(self.connection))
         if error_if_closed is None:
             error_if_closed = False
-        if hasattr(self, 'connection') and type(self.connection) is sqlite3.Connection:
+        if hasattr(self, 'connection') and isinstance(self.connection, sqlite3.Connection):
             return True
         else:
             if error_if_closed:
@@ -185,13 +185,13 @@ class CachedData:
             # config_filepath = 'config.ini'
             config_filepath = 'jupyterPipes.json'
 
-        elif type(config_filepath) is not str:
+        elif not isinstance(config_filepath, str):
             raise TypeError('config filepath must be a string')
 
         # check debug parameter
         if debug is None:
             self.debug = False
-        elif type(debug) is bool:
+        elif isinstance(debug, bool):
             self.debug = debug
         else:
             raise TypeError('debug parameter must True or False')
@@ -254,7 +254,7 @@ class CachedData:
                 example_structure
             ])
 
-        if type(d) is not dict:
+        if not isinstance(d, dict):
             raise TypeError('Input config must be a python dict')
         elif not(all(isinstance(item, str) for item in d.keys())):
             raise ValueError('All input connection names must be strings')
@@ -280,7 +280,7 @@ class CachedData:
                 ))
 
         # error if connection name is not a string
-        if type(incoming_connection_name) is not str:
+        if not isinstance(incoming_connection_name, str):
             raise TypeError(''.join(
                 [msg_prefix,
                 'Input connection name must be a string value. (eg, "#1")']
@@ -322,7 +322,7 @@ class CachedData:
         data_output_successfully = False
         msg_prefix = 'Alteryx.write(int): '
         # error if connection number is not an int
-        if type(outgoing_connection_number) is not int:
+        if not isinstance(outgoing_connection_number, int):
             raise TypeError(''.join(
                 [msg_prefix,
                 'The outgoing connection number must be an integer value.']
@@ -332,7 +332,7 @@ class CachedData:
             raise ValueError('The outgoing connection number must be an integer between 1 and 5')
         elif pandas_df is None:
             raise TypeError('A pandas dataframe is required for passing data to outgoing connections in Alteryx')
-        elif type(pandas_df) is not pd.core.frame.DataFrame:
+        elif not isinstance(pandas_df, pd.core.frame.DataFrame):
             raise TypeError('Currently only pandas dataframes can be used to pass data to outgoing connections in Alteryx')
         else:
             # create custom sqlite object
