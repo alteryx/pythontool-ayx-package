@@ -70,8 +70,8 @@ class SqliteDb:
         error_msg = 'Unable to connect to input data'
         # if file exists, and not creating a new db, then throw error
         if (
-            fileExists(self.filepath, throw_error=not(self.create_new), msg=error_msg) or
-            (self.create_new)
+                fileExists(self.filepath, throw_error=not(self.create_new), msg=error_msg) or
+                (self.create_new)
             ):
             # open connection and attempt to run a quick arbitrary query
             # to confirm that it is a valid sqlite db
