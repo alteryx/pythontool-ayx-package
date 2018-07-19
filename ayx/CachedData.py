@@ -244,13 +244,13 @@ class CachedData:
     # verify that the config json is in the expected structure
     def __verifyInputConfigStructure(self, d):
 
-        example_structure = '\n'.join([
-            '{',
-            '  "#1": "tmp1.sqlite", ',
-            '  "#2": "tmp2.sqlite", ',
-            '  "union": "tmp3.sqlite" ',
-            '}'
-            ])
+        # example_structure = '\n'.join([
+        #     '{',
+        #     '  "#1": "tmp1.sqlite", ',
+        #     '  "#2": "tmp2.sqlite", ',
+        #     '  "union": "tmp3.sqlite" ',
+        #     '}'
+        #     ])
 
         # def configStructureErrorMsg(msg):
         #     return ''.join([
