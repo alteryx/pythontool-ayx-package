@@ -110,24 +110,23 @@ class SqliteDb:
 
     # if one table exists, return its name, otherwise throw error
     def getSingularTable(self):
-
-            tables = self.getTableNames()
-            table_count = len(tables)
-            # if no tables exist throw error
-            if table_count == 0:
-                raise ValueError(fileErrorMsg(
-                    'Db does not contain any tables',
-                    self.filepath
-                    ))
-            # if multiple tables exist, throw error
-            elif table_count > 1:
-                raise ValueError(fileErrorMsg(
-                    'Db should only contain 1 table, but instead has multiple: {}'.format(tables),
-                    self.filepath
-                    ))
-            # return table name only if only one table exists
-            elif table_count == 1:
-                return tables[0]
+        tables = self.getTableNames()
+        table_count = len(tables)
+        # if no tables exist throw error
+        if table_count == 0:
+            raise ValueError(fileErrorMsg(
+                'Db does not contain any tables',
+                self.filepath
+                ))
+        # if multiple tables exist, throw error
+        elif table_count > 1:
+            raise ValueError(fileErrorMsg(
+                'Db should only contain 1 table, but instead has multiple: {}'.format(tables),
+                self.filepath
+                ))
+        # return table name only if only one table exists
+        elif table_count == 1:
+            return tables[0]
 
     def getData(self, table=None):
         self.__isConnectionOpen(error_if_closed=True)
