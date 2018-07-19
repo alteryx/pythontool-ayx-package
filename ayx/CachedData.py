@@ -252,12 +252,12 @@ class CachedData:
             '}'
             ])
 
-        def configStructureErrorMsg(msg):
-            return ''.join([
-                msg, '\n\n',
-                'Example:', '\n',
-                example_structure
-            ])
+        # def configStructureErrorMsg(msg):
+        #     return ''.join([
+        #         msg, '\n\n',
+        #         'Example:', '\n',
+        #         example_structure
+        #     ])
 
         if not isinstance(d, dict):
             raise TypeError('Input config must be a python dict')
