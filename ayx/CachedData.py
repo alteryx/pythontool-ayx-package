@@ -256,9 +256,9 @@ class CachedData:
 
         if not isinstance(d, dict):
             raise TypeError('Input config must be a python dict')
-        elif not(all(isinstance(item, str) for item in d.keys())):
+        elif not all(isinstance(item, str) for item in d.keys()):
             raise ValueError('All input connection names must be strings')
-        elif not(all(isinstance(d[item], str) for item in d.keys())):
+        elif not all(isinstance(d[item], str) for item in d.keys()):
             raise ValueError('All filenames must be strings')
         else:
             return True
