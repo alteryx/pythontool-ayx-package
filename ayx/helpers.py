@@ -32,7 +32,7 @@ def tableNameIsValid(table_name):
         if stripped != table_name:
             valid = False
             reason = 'invalid characters (only alphanumeric and underscores)'
-        elif not(table_name[0].isalpha()):
+        elif not table_name[0].isalpha():
             valid = False
             reason = 'first character must be a letter'
         else:
