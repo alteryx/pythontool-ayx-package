@@ -201,11 +201,11 @@ class CachedData:
         self.config_absolute_path = os.path.abspath(self.config_filepath)
 
         # throw error if unable to load input file mapping from config
-        try:
-            self.__input_file_map()
-        except:
-            print('Unable to load input data connection config')
-            raise
+        # try:
+        #     self.__input_file_map()
+        # except:
+        #     print('Unable to load input data connection config')
+        #     # raise
 
     # mapping of connection name to filepath {input_connection_name: filepath}
     def __input_file_map(self):

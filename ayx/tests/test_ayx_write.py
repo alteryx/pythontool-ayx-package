@@ -50,6 +50,15 @@ class TestAlteryxWriteContents(TestCase):
         expected = pandas.core.frame.DataFrame
         self.assertEqual(result, expected)
 
+    def testAyxWriteDataRowCount(self):
+        write(self.data, self.connection)
+        with SqliteDb(self.filename, create_new=False) as result_db:
+            rows = pandas.read_sql_query(
+                "select count(*) as count from data",
+                result_db.connection
+                )['count'].tolist()[0]
+        self.assertTrue(rows > 0)
+
     def testAyxWriteDataContents(self):
         write(self.data, self.connection)
         expected = self.data
