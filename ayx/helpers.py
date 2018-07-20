@@ -1,4 +1,5 @@
-import os, string
+import os
+import string
 
 
 # return a string containing a msg followed by a filepath
@@ -28,16 +29,17 @@ def tableNameIsValid(table_name):
     if isString(table_name):
         # stripped = ''.join( chr for chr in table_name if (chr.isalnum() or chr=='_'))
         valid_chars = ''.join([string.ascii_letters, string.digits])
-        stripped = ''.join( chr for chr in table_name if (chr in valid_chars or chr=='_'))
+        stripped = ''.join(chr for chr in table_name if (chr in valid_chars or chr == '_'))
         if stripped != table_name:
             valid = False
             reason = 'invalid characters (only alphanumeric and underscores)'
-        elif not(table_name[0].isalpha()):
+        elif not table_name[0].isalpha():
             valid = False
             reason = 'first character must be a letter'
         else:
             valid = True
-        return valid
+            reason = None
+        return valid, reason
     else:
         raise TypeError('table name must be a string')
 
@@ -46,7 +48,7 @@ def deleteFile(filepath, debug=None):
     # set default for debug
     if debug is None:
         debug = False
-    elif type(debug) is not bool:
+    elif not isinstance(debug, bool):
         raise TypeError('debug value must be True or False')
 
     # if file exists, attempt to delete it
@@ -61,4 +63,4 @@ def deleteFile(filepath, debug=None):
             print(fileErrorMsg("Success: file does no", filepath))
 
 def isString(var):
-    return (type(var) is str)
+    return isinstance(var, str)
