@@ -2,7 +2,7 @@ import os
 import json
 import sqlite3
 import pandas as pd
-from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, deleteFile, isString
+from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid
 
 
 
@@ -17,7 +17,7 @@ class SqliteDb:
         # default for create_new is false (throw error if file doesnt exist)+++
         if create_new is None:
             self.create_new = False
-        elif type(create_new) is bool:
+        elif isinstance(create_new, bool):
             self.create_new = create_new
         else:
             raise TypeError("create_new parameter must be boolean")
@@ -25,7 +25,7 @@ class SqliteDb:
         # check debug parameter
         if debug is None:
             self.debug = False
-        elif type(debug) is bool:
+        elif isinstance(debug, bool):
             self.debug = debug
         else:
             raise TypeError('debug parameter must True or False')
@@ -43,7 +43,7 @@ class SqliteDb:
 
     # open the connection
     def openConnection(self):
-        if not(self.__isConnectionOpen()):
+        if not self.__isConnectionOpen():
             if self.debug:
                 print('Attempting to open connection to {}'.format(self.filepath))
             self.connection = self.__returnConnection()
@@ -58,7 +58,7 @@ class SqliteDb:
             print('Connection status: {}'.format(self.connection))
         if error_if_closed is None:
             error_if_closed = False
-        if hasattr(self, 'connection') and type(self.connection) is sqlite3.Connection:
+        if hasattr(self, 'connection') and isinstance(self.connection, sqlite3.Connection):
             return True
         else:
             if error_if_closed:
@@ -70,8 +70,8 @@ class SqliteDb:
         error_msg = 'Unable to connect to input data'
         # if file exists, and not creating a new db, then throw error
         if (
-            fileExists(self.filepath, throw_error=not(self.create_new), msg=error_msg) or
-            (self.create_new)
+                fileExists(self.filepath, throw_error=not(self.create_new), msg=error_msg) or
+                (self.create_new)
             ):
             # open connection and attempt to run a quick arbitrary query
             # to confirm that it is a valid sqlite db
@@ -110,24 +110,23 @@ class SqliteDb:
 
     # if one table exists, return its name, otherwise throw error
     def getSingularTable(self):
-
-            tables = self.getTableNames()
-            table_count = len(tables)
-            # if no tables exist throw error
-            if table_count == 0:
-                raise ValueError(fileErrorMsg(
-                    'Db does not contain any tables',
-                    self.filepath
-                    ))
-            # if multiple tables exist, throw error
-            elif table_count > 1:
-                raise ValueError(fileErrorMsg(
-                    'Db should only contain 1 table, but instead has multiple: {}'.format(tables),
-                    self.filepath
-                    ))
-            # return table name only if only one table exists
-            elif table_count == 1:
-                return tables[0]
+        tables = self.getTableNames()
+        table_count = len(tables)
+        # if no tables exist throw error
+        if table_count == 0:
+            raise ValueError(fileErrorMsg(
+                'Db does not contain any tables',
+                self.filepath
+                ))
+        # if multiple tables exist, throw error
+        elif table_count > 1:
+            raise ValueError(fileErrorMsg(
+                'Db should only contain 1 table, but instead has multiple: {}'.format(tables),
+                self.filepath
+                ))
+        # return table name only if only one table exists
+        elif table_count == 1:
+            return tables[0]
 
     def getData(self, table=None):
         self.__isConnectionOpen(error_if_closed=True)
@@ -138,11 +137,12 @@ class SqliteDb:
 
         # now that the table name has been retrieved, get the data as pandas df
         # (but first check that table name is valid to avoid sql injection)
-        if tableNameIsValid(table):
+        table_valid = tableNameIsValid(table)
+        if table_valid[0]:
             if self.debug:
                 print('Attempting to get data from table "{}"'.format(table))
             try:
-                return pd.read_sql_query(
+                query_result = pd.read_sql_query(
                     'select * from {}'.format(table),
                     self.connection,
                     )
@@ -150,6 +150,7 @@ class SqliteDb:
                     print(fileErrorMsg(
                         'Success reading input table "{}" '.format(table),
                         self.filepath))
+                return query_result
             except:
                 print(fileErrorMsg(
                     'Error: unable to read input table "{}"'.format(table),
@@ -157,7 +158,11 @@ class SqliteDb:
                 raise
 
         else:
-            raise NameError('Invalid table name ({})'.format(table))
+            raise NameError(''.join([
+                'Invalid table name ({})'.format(table),
+                'Reason: ',
+                table_valid[1]
+                ]))
 
 
     def writeData(self, pandas_df, table):
@@ -185,13 +190,13 @@ class CachedData:
             # config_filepath = 'config.ini'
             config_filepath = 'jupyterPipes.json'
 
-        elif type(config_filepath) is not str:
+        elif not isinstance(config_filepath, str):
             raise TypeError('config filepath must be a string')
 
         # check debug parameter
         if debug is None:
             self.debug = False
-        elif type(debug) is bool:
+        elif isinstance(debug, bool):
             self.debug = debug
         else:
             raise TypeError('debug parameter must True or False')
@@ -239,26 +244,26 @@ class CachedData:
     # verify that the config json is in the expected structure
     def __verifyInputConfigStructure(self, d):
 
-        example_structure = '\n'.join([
-            '{',
-            '  "#1": "tmp1.sqlite", ',
-            '  "#2": "tmp2.sqlite", ',
-            '  "union": "tmp3.sqlite" ',
-            '}'
-            ])
+        # example_structure = '\n'.join([
+        #     '{',
+        #     '  "#1": "tmp1.sqlite", ',
+        #     '  "#2": "tmp2.sqlite", ',
+        #     '  "union": "tmp3.sqlite" ',
+        #     '}'
+        #     ])
 
-        def configStructureErrorMsg(msg):
-            return ''.join([
-                msg, '\n\n',
-                'Example:', '\n',
-                example_structure
-            ])
+        # def configStructureErrorMsg(msg):
+        #     return ''.join([
+        #         msg, '\n\n',
+        #         'Example:', '\n',
+        #         example_structure
+        #     ])
 
-        if type(d) is not dict:
+        if not isinstance(d, dict):
             raise TypeError('Input config must be a python dict')
-        elif not(all(isinstance(item, str) for item in d.keys())):
+        elif not all(isinstance(item, str) for item in d.keys()):
             raise ValueError('All input connection names must be strings')
-        elif not(all(isinstance(d[item], str) for item in d.keys())):
+        elif not all(isinstance(d[item], str) for item in d.keys()):
             raise ValueError('All filenames must be strings')
         else:
             return True
@@ -280,10 +285,10 @@ class CachedData:
                 ))
 
         # error if connection name is not a string
-        if type(incoming_connection_name) is not str:
+        if not isinstance(incoming_connection_name, str):
             raise TypeError(''.join(
                 [msg_prefix,
-                'Input connection name must be a string value. (eg, "#1")']
+                 'Input connection name must be a string value. (eg, "#1")']
                 ))
         # error if connection name is not a named key in the config json (dict)
         elif incoming_connection_name not in input_file_map:
@@ -319,20 +324,19 @@ class CachedData:
                 outgoing_connection_number
                 ))
 
-        data_output_successfully = False
         msg_prefix = 'Alteryx.write(int): '
         # error if connection number is not an int
-        if type(outgoing_connection_number) is not int:
+        if not isinstance(outgoing_connection_number, int):
             raise TypeError(''.join(
                 [msg_prefix,
-                'The outgoing connection number must be an integer value.']
+                 'The outgoing connection number must be an integer value.']
                 ))
         # error if connection number is not between 1 and 5
         elif outgoing_connection_number < 1 or outgoing_connection_number > 5:
             raise ValueError('The outgoing connection number must be an integer between 1 and 5')
         elif pandas_df is None:
             raise TypeError('A pandas dataframe is required for passing data to outgoing connections in Alteryx')
-        elif type(pandas_df) is not pd.core.frame.DataFrame:
+        elif not isinstance(pandas_df, pd.core.frame.DataFrame):
             raise TypeError('Currently only pandas dataframes can be used to pass data to outgoing connections in Alteryx')
         else:
             # create custom sqlite object
