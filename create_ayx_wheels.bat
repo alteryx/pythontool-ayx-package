@@ -32,16 +32,16 @@ nosetests
 :: PROMPT TO COPY FILES
 @echo off
 ECHO ==================================================================
-ECHO All wheels have been created and tests have been run! 
+ECHO All wheels have been created and tests have been run!
 ECHO Check logs above and review the contents of the deps folder (%cd%\deps).
 ECHO ---------------------
-ECHO The next step will copy the wheels and requirements to 
+ECHO The next step will copy the wheels and requirements to
 ECHO S:\3rdParty\Python\Miniconda3\PythonTool_Config
 ECHO ---------------------
 ECHO Do you want to continue?
 ECHO ==================================================================
 @echo on
-pause 
+pause
 
 :: COPY FILES
 REM :: set path to destination
@@ -53,13 +53,13 @@ SET origin=%cd%\deps
 REM :: delete all files in destination folder (retain folder structure though)
 del "%dest%\*" /s /q
 REM :: copy files from origin to destination
-xcopy "%origin%\*" "%dest%" /s /i
+xcopy "%origin%\*" "%dest%" /s /i /f
 
 :: COMPLETE
 @echo off
 ECHO ==================================================================
-ECHO Files have been copied! 
+ECHO Files have been copied!
 ECHO Check the logs above for copy errors and hit continue to execute a quick cleanup.
 ECHO ==================================================================
 @echo on
-pause 
+pause

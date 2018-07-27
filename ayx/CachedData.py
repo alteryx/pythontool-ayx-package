@@ -205,12 +205,6 @@ class CachedData:
         self.config_filepath = config_filepath
         self.config_absolute_path = os.path.abspath(self.config_filepath)
 
-        # throw error if unable to load input file mapping from config
-        try:
-            self.__input_file_map()
-        except:
-            print('Unable to load input data connection config')
-            raise
 
     # mapping of connection name to filepath {input_connection_name: filepath}
     def __input_file_map(self):
@@ -243,21 +237,6 @@ class CachedData:
 
     # verify that the config json is in the expected structure
     def __verifyInputConfigStructure(self, d):
-
-        # example_structure = '\n'.join([
-        #     '{',
-        #     '  "#1": "tmp1.sqlite", ',
-        #     '  "#2": "tmp2.sqlite", ',
-        #     '  "union": "tmp3.sqlite" ',
-        #     '}'
-        #     ])
-
-        # def configStructureErrorMsg(msg):
-        #     return ''.join([
-        #         msg, '\n\n',
-        #         'Example:', '\n',
-        #         example_structure
-        #     ])
 
         if not isinstance(d, dict):
             raise TypeError('Input config must be a python dict')

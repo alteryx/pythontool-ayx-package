@@ -24,3 +24,6 @@ docs/
 
 # temporary (unnamed) ipython notebooks
 Untitled*.ipynb
+
+# wheels folder
+wheels/

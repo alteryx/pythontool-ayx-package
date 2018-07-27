@@ -34,7 +34,7 @@ class TestSqliteConnectionOpen(TestCase):
         for test_value in self.valid_table_names:
             result = tableNameIsValid(test_value)
             self.assertTrue(
-                result,
+                result[0],
                 msg='Value: {}, Expected: Valid, Result: Invalid'.format(test_value)
                 )
 
@@ -42,6 +42,6 @@ class TestSqliteConnectionOpen(TestCase):
         for test_value in self.invalid_table_names:
             result = tableNameIsValid(test_value)
             self.assertFalse(
-                result,
+                result[0],
                 msg='Value: {}, Expected: Invalid, Result: Valid'.format(test_value)
                 )

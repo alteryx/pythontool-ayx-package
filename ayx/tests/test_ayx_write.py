@@ -3,7 +3,8 @@ import sqlite3
 import pandas
 from unittest import TestCase
 from ayx.Alteryx import read, write
-from ayx.CachedData import SqliteDb, deleteFile, fileExists
+from ayx.CachedData import SqliteDb
+from ayx.helpers import deleteFile, fileExists
 
 def outputFilename(connection_num):
     return 'output_{}.sqlite'.format(connection_num)
@@ -49,6 +50,15 @@ class TestAlteryxWriteContents(TestCase):
         result = type(write(self.data, self.connection))
         expected = pandas.core.frame.DataFrame
         self.assertEqual(result, expected)
+
+    def testAyxWriteDataRowCount(self):
+        write(self.data, self.connection)
+        with SqliteDb(self.filename, create_new=False) as result_db:
+            rows = pandas.read_sql_query(
+                "select count(*) as count from data",
+                result_db.connection
+                )['count'].tolist()[0]
+        self.assertTrue(rows > 0)
 
     def testAyxWriteDataContents(self):
         write(self.data, self.connection)

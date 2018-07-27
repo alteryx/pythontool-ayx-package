@@ -1,6 +1,6 @@
 import os
 from unittest import TestCase
-from ayx.CachedData import deleteFile, fileExists
+from ayx.helpers import deleteFile, fileExists
 
 class TestAlteryxDeleteFile1(TestCase):
 
@@ -23,7 +23,10 @@ class TestAlteryxDeleteFile2(TestCase):
         # create new file in its place
         with open(self.filepath, 'w') as file:
             file.write('test')
-        fileExists(self.filepath, throw_error=True)
+        try:
+            fileExists(self.filepath, throw_error=True)
+        except:
+            self.fail("deleteFile() raised an error unexpectedly!")
 
 
     def testWriteDeleteWriteDelete(self):

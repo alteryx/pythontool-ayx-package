@@ -1,4 +1,5 @@
 pandas
+IPython
 sqlalchemy
 jupyter
 pywin32

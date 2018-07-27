@@ -1,11 +1,12 @@
 from setuptools import setup
+from ayx.version import version
 
 def readme():
     with open('README.rst') as f:
         return f.read()
 
 setup(name='ayx',
-      version='0.0.4',
+      version=version,
       description='python package for alteryx designer',
       long_description=readme(),
       url='',
@@ -15,10 +16,20 @@ setup(name='ayx',
       test_suite='nose.collector',
       packages=['ayx'],
       install_requires=[
+          # packages required by ayx
           'pandas',
-		  'SQLAlchemy',
-		  'jupyter',
-          'pywin32'
+          'IPython',
+          # additional packages included with Alteryx install
+          'jupyter',
+    	  'SQLAlchemy',
+          'pywin32',
+          'matplotlib',
+          'numpy',
+          'requests',
+          'scikit-learn',
+          'scipy',
+          'six',
+          'statsmodels'
           ],
       zip_safe=False
       )
