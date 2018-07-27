@@ -10,4 +10,5 @@ class TestAlteryxRead(TestCase):
         self.data = getIncomingConnectionNames()
 
     def testConnectionNamesIsArray(self):
-        pass
+        result = isinstance(self.data, list)
+        self.assertTrue(result)

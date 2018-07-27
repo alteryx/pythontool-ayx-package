@@ -1,5 +1,6 @@
 import os
 import string
+from IPython.display import display, Markdown
 
 
 # return a string containing a msg followed by a filepath
@@ -10,18 +11,27 @@ def fileErrorMsg(msg, filepath=None):
 
 
 # check if file exists. if not, throw error
-def fileExists(filepath, throw_error=None, msg=None):
+def fileExists(filepath, throw_error=None, msg=None, debug=None):
     # default is to not throw an error
     if throw_error is None:
         throw_error = False
     if msg is None:
         msg = 'Input data file does not exist'
+    # set default for debug
+    if debug is None:
+        debug = False
+    elif not isinstance(debug, bool):
+        raise TypeError('debug value must be True or False')
     # if file exists, return true
     if os.path.isfile(filepath):
+        if debug:
+            print(fileErrorMsg('File exists', filepath))
         return True
     else:
         if throw_error:
             raise FileNotFoundError(fileErrorMsg(msg, filepath))
+        elif debug:
+            print(fileErrorMsg(msg, filepath))
         return False
 
 # check if a string is a valid sqlite table name
@@ -55,12 +65,31 @@ def deleteFile(filepath, debug=None):
     if fileExists(filepath, throw_error=False):
         try:
             os.remove(filepath)
+            if debug:
+                print(fileErrorMsg("Success: file deleted", filepath))
         except:
             print(fileErrorMsg("Error: Unable to delete file", filepath))
             raise
     else:
         if debug:
-            print(fileErrorMsg("Success: file does no", filepath))
+            print(fileErrorMsg("Success: file does not exist", filepath))
 
 def isString(var):
     return isinstance(var, str)
+
+
+
+def prepareMultilineMarkdownForDisplay(markdown):
+    # split each line of input markdown into items in a list
+    md_lines = markdown.splitlines()
+    # strip each line of whitespace
+    md_lines_stripped = list(map(lambda x: x.strip(), md_lines))
+    # add trailing spaces and newline char between lines when joining back together
+    markdown_prepared = '  \n'.join(md_lines_stripped)
+    # return prepared markdown
+    return markdown_prepared
+
+
+def displayMarkdown(markdown):
+    # display the prepared markdown as formatted text
+    display(Markdown(markdown))

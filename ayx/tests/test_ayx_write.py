@@ -3,7 +3,8 @@ import sqlite3
 import pandas
 from unittest import TestCase
 from ayx.Alteryx import read, write
-from ayx.CachedData import SqliteDb, deleteFile, fileExists
+from ayx.CachedData import SqliteDb
+from ayx.helpers import deleteFile, fileExists
 
 def outputFilename(connection_num):
     return 'output_{}.sqlite'.format(connection_num)
