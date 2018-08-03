@@ -18,10 +18,7 @@ def packageIsInstalled(pkg):
         # example: when executing __import__('keras') ==> "No module named 'tensorflow'"
         # because tensorflow is an optional dependency that doesn't get installed with
         # keras (user is required to install tensorflow or change setting to not use tensorflow)
-        if error_package != pkg:
-            return True
-        else:
-            return False
+        return error_package != pkg
 
 
 def installPackages(package, install_type=None):
