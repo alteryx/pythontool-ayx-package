@@ -11,20 +11,14 @@ def packageIsInstalled(pkg):
         # if we can import the package, then good to go
         __import__(pkg)
         return True
-    except Exception as e:
-        if isinstance(e, ModuleNotFoundError):
-            # get the missing package name that triggered the exception
-            error_package = e.msg.split(' ')[-1][1:-1]
-            # is the missing module that triggered the error the one being checked?
-            # example: when executing __import__('keras') ==> "No module named 'tensorflow'"
-            # because tensorflow is an optional dependency that doesn't get installed with
-            # keras (user is required to install tensorflow or change setting to not use tensorflow)
-            if error_package != pkg:
-                return True
-            else:
-                return False
-        else:
-            raise
+    except ModuleNotFoundError as e:
+        # get the missing package name that triggered the exception
+        error_package = e.msg.split(' ')[-1][1:-1]
+        # is the missing module that triggered the error the one being checked?
+        # example: when executing __import__('keras') ==> "No module named 'tensorflow'"
+        # because tensorflow is an optional dependency that doesn't get installed with
+        # keras (user is required to install tensorflow or change setting to not use tensorflow)
+        return error_package != pkg
 
 
 def installPackages(package, install_type=None):
