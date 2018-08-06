@@ -1,6 +1,4 @@
 import sys, io, subprocess
-from ayx.packages import all_packages
-
 
 
 
