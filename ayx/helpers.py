@@ -37,9 +37,9 @@ def fileExists(filepath, throw_error=None, msg=None, debug=None):
 # check if a string is a valid sqlite table name
 def tableNameIsValid(table_name):
     if isString(table_name):
-        # stripped = ''.join( chr for chr in table_name if (chr.isalnum() or chr=='_'))
-        valid_chars = ''.join([string.ascii_letters, string.digits])
-        stripped = ''.join(chr for chr in table_name if (chr in valid_chars or chr == '_'))
+        # stripped = ''.join( char for char in table_name if (char.isalnum() or char=='_'))
+        valid_chars = ''.join([string.ascii_letters, string.digits, '_'])
+        stripped = ''.join(char for char in table_name if (char in valid_chars))
         if stripped != table_name:
             valid = False
             reason = 'invalid characters (only alphanumeric and underscores)'

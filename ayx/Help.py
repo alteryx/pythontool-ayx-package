@@ -20,6 +20,11 @@ class Help:
         *A list containing all incoming data connections will be returned. If the connections look out of sync, re-run the Alteryx workflow. (As with the read function, a snapshot of the data from the previous run is used when the function is called interactively.)*
         > ```Alteryx.getIncomingConnectionNames()```
         > ► <span style="color:grey">*["#1", "#2", "model"]*</span>
+        * **Alteryx.installPackages(&nbsp;**<span style="color:blue">"*&lt;package name or list of package names&gt;"&nbsp;*</span>**)**
+        *Package(s) will be installed from PyPI. [<span style="font-weight:bold">Note:</span> An internet connection is required. Also, if using an admin install of Alteryx, Alteryx must be opened in admin mode to install packages. Non-admin installs do not have this restriction.*
+        > ```Alteryx.installPackages("tensorflow")```<br/>```Alteryx.installPackages(["keras","theano","gensim"])```
+
+
 
 
         '''
