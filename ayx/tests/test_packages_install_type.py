@@ -1,4 +1,5 @@
 from unittest import TestCase
+from subprocess import CalledProcessError
 from ayx.tests.testdata.install_test_package_name import test_package
 from ayx.Package import installPackages, packageIsInstalled
 
@@ -23,8 +24,13 @@ class TestPackageStrOrList(TestCase):
         for value in self.valid_values:
             try:
                 installPackages(value)
-            except TypeError as ex:
+            except TypeError:
                 self.fail("install() raised TypeError unexpectedly!")
+            except CalledProcessError:
+                # expected that install process will fail because these are
+                # not real packages
+                pass
+
 
     def testInvalidType(self):
         for value in self.invalid_values:

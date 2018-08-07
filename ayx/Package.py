@@ -59,4 +59,15 @@ def installPackages(package, install_type=None):
     # main(pip_args)
 
     ## attempt to install -- approach #2
-    subprocess.call([sys.executable, "-m", "pip"] + pip_args_list)
+    try:
+        # run "pip install <package>"
+        result = subprocess.check_output(
+            [sys.executable, "-m", "pip"] + pip_args_list,
+            stderr = subprocess.STDOUT
+            )
+        # print the output
+        print(result.decode("utf-8"))
+    # if any errors, print them to output
+    except subprocess.CalledProcessError as e:
+        print(e.output.decode("utf-8"))
+        raise
