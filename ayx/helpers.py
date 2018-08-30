@@ -2,6 +2,13 @@ import os
 import string
 from IPython.display import display, Markdown
 
+def convertObjToStr(obj):
+    try:
+        obj_str = '{}'.format(obj)
+    except:
+        obj_str = '<{}>'.format(type(obj))
+    return obj_str
+
 
 # return a string containing a msg followed by a filepath
 def fileErrorMsg(msg, filepath=None):

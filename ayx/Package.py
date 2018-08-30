@@ -19,7 +19,12 @@ def packageIsInstalled(pkg):
         return error_package != pkg
 
 
-def installPackages(package, install_type=None):
+def installPackages(package, install_type=None, debug=None):
+    if debug is None:
+        debug = False
+    elif not isinstance(debug, bool):
+        raise TypeError('debug must be True or False')
+
     # default install_type is install
     if install_type is None:
         install_type = 'install'
@@ -60,6 +65,9 @@ def installPackages(package, install_type=None):
 
     ## attempt to install -- approach #2
     try:
+        print('Installing... \n(this may take a minute depending on the package size and other factors)')
+        if debug:
+            print(' '.join(['python -m pip'] + pip_args_list))
         # run "pip install <package>"
         result = subprocess.check_output(
             [sys.executable, "-m", "pip"] + pip_args_list,

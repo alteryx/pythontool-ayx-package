@@ -25,7 +25,8 @@ class TestAlteryxRead(TestCase):
         # attempt to uninstall test package
         try:
             installPackage(self.test_package, 'uninstall -y')
-        except:
+        except Exception as e:
+            print(e)
             self.fail('error uninstalling {}'.format(self.test_package))
         # check if uninstalled
         if packageIsInstalled(self.test_package):

@@ -1,7 +1,15 @@
 from ayx.helpers import prepareMultilineMarkdownForDisplay, displayMarkdown
 
 class Help:
-    def __init__(self):
+    def __init__(self, debug=None):
+
+        if debug is None:
+            self.debug = False
+        elif isinstance(debug, bool):
+            self.debug = debug
+        else:
+            raise TypeError('debug must be True or False')
+
         self.markdown_text = '''
 
         ### Code snippets for passing data between Alteryx and Jupyter
@@ -24,10 +32,9 @@ class Help:
         *Package(s) will be installed from PyPI. [<span style="font-weight:bold">Note:</span> An internet connection is required. Also, if using an admin install of Alteryx, Alteryx must be opened in admin mode to install packages. Non-admin installs do not have this restriction.]*
         > ```Alteryx.installPackages("tensorflow")```<br/>```Alteryx.installPackages(["keras","theano","gensim"])```
 
-
-
-
         '''
+
+
 
     # the motivation behind splitting these functions out to such a degree
     # is for testing purposes
