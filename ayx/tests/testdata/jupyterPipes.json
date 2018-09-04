@@ -1,5 +1,10 @@
 {
-	"#1": "4460abb7be83bae8f01b9bf1238a923c.sqlite",
-	"#2": "input_ayx137028f06553292c2fbe34041601684b.sqlite",
-	"1": "input_ayxc4ca4238a0b923820dcc509a6f75849b.sqlite"
+  "constants": {
+    "User.test": "abc123"
+  },
+  "input_connections": {
+  	"#1": "4460abb7be83bae8f01b9bf1238a923c.sqlite",
+  	"#2": "input_ayx137028f06553292c2fbe34041601684b.sqlite",
+  	"1": "input_ayxc4ca4238a0b923820dcc509a6f75849b.sqlite"
+  }
 }

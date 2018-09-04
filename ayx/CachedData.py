@@ -6,6 +6,20 @@ from re import findall
 from functools import reduce
 from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr
 
+class ayxPandas(pd.core.frame.DataFrame):
+    def __init__(self, *args, **kwargs):
+        pd.core.frame.DataFrame.__init__(self, *args, **kwargs)
+
+
+@pd.api.extensions.register_dataframe_accessor("ayx")
+class AyxAccessor(object):
+    def __init__(self, pandas_obj):
+        self._obj = pandas_obj
+
+        self.input_field_metadata = None
+        self.input_connection_name = None
+
+
 class MetadataTools:
     def __init__(self, debug=None):
         # initialize the different columns in each context (ayx, sqlite)
@@ -801,20 +815,20 @@ class SqliteDb:
             raise
 
 
-class CachedData:
-    def __init__(self, config_filepath=None, debug=None):
+class Config:
+    def __init__(self, filepath=None, debug=None):
 
         # default value for config filepath
-        if config_filepath is None:
+        if filepath is None:
             # config_filepath = 'config.ini'
-            config_filepath = 'jupyterPipes.json'
+            filepath = 'jupyterPipes.json'
 
-        elif not isinstance(config_filepath, str):
+        elif not isinstance(filepath, str):
             raise TypeError('\n'.join([
                 'config filepath must be a string, not {}:'.format(
-                    type(config_filepath)
+                    type(filepath)
                     ),
-                convertObjToStr(config_filepath)
+                convertObjToStr(filepath)
                 ]))
 
         # check debug parameter
@@ -826,38 +840,58 @@ class CachedData:
             raise TypeError('debug parameter must True or False')
 
         # set attributes
-        self.config_filepath = config_filepath
-        self.config_absolute_path = os.path.abspath(self.config_filepath)
+        self.filepath = filepath
+        self.absolute_path = os.path.abspath(self.filepath)
+        self.input_file_map = self.__getInputFileMap()
+
+
+    def __getConfigJSON(self):
+        if self.debug:
+            print('Attempting to read in config file ({})'.format(
+                self.absolute_path
+                ))
+
+        try:
+            # check that config exists
+            if fileExists(
+                self.absolute_path,
+                True,
+                "Cached data unavailable -- run the workflow to make the input data available in Jupyter notebook"
+                ):
+                    if self.debug:
+                        print('Config file found -- {}'.format(self.absolute_path))
+                    # read in config file
+                    with open(self.absolute_path) as f:
+                        config = json.load(f)
+                    # check if config is a dict
+                    if not isinstance(config, dict):
+                        raise TypeError('Input config must be a python dict')
+                    return config
+        except:
+            print('Config file error -- {}'.format(self.absolute_path))
+            raise
 
 
     # mapping of connection name to filepath {input_connection_name: filepath}
-    def __input_file_map(self):
+    def __getInputFileMap(self):
 
         if self.debug:
-            print('Attempting to read in config file containing input connection filepath map {}'.format(
-                self.config_absolute_path
+            print('Attempting to get input connection filepath map {}'.format(
+                self.absolute_path
                 ))
 
-        # check that config exists
-        if fileExists(
-            self.config_absolute_path,
-            True,
-            "Cached data unavailable -- run the workflow to make the input data available in Jupyter notebook"
-            ):
-            try:
-                if self.debug:
-                    print('Config file found -- {}'.format(self.config_absolute_path))
-                with open(self.config_absolute_path) as f:
-                    config = json.load(f)
-                # config is the raw json, input_map is specifically the input mapping
-                # (eg, if the mapping is nested below the parent node of a larger config)
-                input_map = config # currently, config contains only input mappings
-                # check if file is in expected format
-                self.__verifyInputConfigStructure(input_map)
-                return input_map
-            except:
-                print('Error: input connection config file is not in the expected format')
-                raise
+        try:
+            # load the config json as a dict
+            config = self.__getConfigJSON()
+            # config is the raw json, input_map is specifically the input mapping
+            # (eg, if the mapping is nested below the parent node of a larger config)
+            input_map = config['input_connections'] 
+            # check if file is in expected format
+            self.__verifyInputConfigStructure(input_map)
+            return input_map
+        except:
+            print('Config file error -- {}'.format(self.absolute_path))
+            raise
 
     # verify that the config json is in the expected structure
     def __verifyInputConfigStructure(self, d):
@@ -871,13 +905,28 @@ class CachedData:
         else:
             return True
 
+
+
+class CachedData:
+    def __init__(self, config_filepath=None, debug=None):
+
+        self.config = Config(filepath=config_filepath, debug=debug)
+        # check debug parameter
+        if debug is None:
+            self.debug = False
+        elif isinstance(debug, bool):
+            self.debug = debug
+        else:
+            raise TypeError('debug parameter must True or False')
+
+
     def __getIncomingConnectionFilepath(self, incoming_connection_name):
         if self.debug:
             print('Attempting to get the cached data filepath for incoming connection "{}"'.format(
                 incoming_connection_name
                 ))
 
-        input_file_map = self.__input_file_map()
+        input_file_map = self.config.input_file_map
 
         # error if connection name is not a string
         if not isinstance(incoming_connection_name, str):
@@ -921,12 +970,22 @@ class CachedData:
                 raise
 
 
-    def write(self, pandas_df, outgoing_connection_number):
+    def write(self, pandas_df, outgoing_connection_number, columns=None):
 
         if self.debug:
             print('Attempting to write out cached data to outgoing connection "{}"'.format(
                 outgoing_connection_number
                 ))
+
+        if columns is None:
+            pass
+        elif isinstance(columns, dict):
+            pass
+        elif isinstance(columns, list):
+            pass
+        else:
+            raise TypeError('columns is optional, but if provided, must be a dict or list')
+
 
         msg_prefix = 'Alteryx.write(int): '
         # error if connection number is not an int
@@ -968,7 +1027,7 @@ class CachedData:
         if self.debug:
             print('Attempting to get all incoming connection names')
 
-        return list(self.__input_file_map().keys())
+        return list(self.config.input_file_map.keys())
 
 
     def readMetadata(self, incoming_connection_name):
