@@ -842,8 +842,8 @@ class Config:
         # set attributes
         self.filepath = filepath
         self.absolute_path = os.path.abspath(self.filepath)
+        self.constantMap = {}
         self.input_file_map = self.__getInputFileMap()
-
 
     def __getConfigJSON(self):
         if self.debug:
@@ -885,7 +885,11 @@ class Config:
             config = self.__getConfigJSON()
             # config is the raw json, input_map is specifically the input mapping
             # (eg, if the mapping is nested below the parent node of a larger config)
-            input_map = config['input_connections'] 
+            input_map = config['input_connections']
+
+            if 'Constants' in config:
+                self.constantMap = config['Constants']
+
             # check if file is in expected format
             self.__verifyInputConfigStructure(input_map)
             return input_map
@@ -896,6 +900,15 @@ class Config:
     # verify that the config json is in the expected structure
     def __verifyInputConfigStructure(self, d):
 
+        #Workflow Constants
+        if not isinstance(self.constantMap,dict):
+            raise TypeError('Constants value must be a python dict')
+        for k, v in self.constantMap.items():
+            if not isinstance(k, str):
+                raise ValueError('Constants keys must be strings')
+            # v however, could be a string, float, or int
+
+        #input files
         if not isinstance(d, dict):
             raise TypeError('Input config must be a python dict')
         elif not all(isinstance(item, str) for item in d.keys()):
@@ -941,6 +954,29 @@ class CachedData:
                 ]))
         else:
             return input_file_map[incoming_connection_name]
+
+    def getWorkflowConstant(self, constantName, windowsToUnixPath=False):
+        if self.debug:
+            print('Attempting to get the cached workflowConstant for incoming constant "{}"'.format(constantName))
+
+        # error if connection name is not a string
+
+        if not isinstance(constantName, str):
+            raise TypeError(''.join(['Constant name must be a string value. (eg, "#1")']))
+
+
+        # error if connection name is not a named key in the config json (dict)
+        if constantName not in self.config.constantMap:
+            raise ReferenceError(''.join([
+                'The Constant "{}" does not exist'.format(constantName),
+                ' -- make sure you typed it exactly the same in the Alteryx GUI and your python code.'
+            ]))
+        else:
+            val = self.config.constantMap[constantName]
+            if windowsToUnixPath and isinstance(val, str):
+                val = val.replace("\\", "/")
+
+            return val
 
     def read(self, incoming_connection_name):
 

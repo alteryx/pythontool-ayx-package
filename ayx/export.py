@@ -10,6 +10,9 @@ def help(debug=None, **kwargs):
     '''
     __Help__(debug=debug).display()
 
+def getWorkflowConstant(constantName,debug=None, windowsToUnixPath=False, **kwargs):
+    return __CachedData__(debug=debug).getWorkflowConstant(constantName, windowsToUnixPath, **kwargs)
+
 def read(incoming_connection_name, debug=None, **kwargs):
     '''
     When running the workflow in Alteryx, this function will convert incoming data streams to pandas dataframes when executing the code written in the Python tool. When called from the Jupyter notebook interactively, it will read in a copy of the incoming data that was cached on the previous run of the Alteryx workflow.
