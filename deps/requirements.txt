@@ -1,5 +1,5 @@
 astroid==2.0.4
-ayx==1.0.3
+ayx==1.0.4
 backcall==0.1.0
 bleach==2.1.4
 certifi==2018.8.24

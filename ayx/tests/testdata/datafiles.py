@@ -78,6 +78,13 @@ datafiles = {
         'tables': [],
         'notes': 'config file that points to 3 input sqlite files (#1 written by engine code)'
     },
+    'no_input_data_config':{
+        'filename':'no_inputs.ini',
+        'type':'json',
+        'valid_file':True,
+        'tables':[],
+        'notes':'only Constants, no inputs connected yet'
+    },
 }
 
 def getValidSqliteFiles():

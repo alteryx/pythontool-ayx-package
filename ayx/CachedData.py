@@ -885,13 +885,17 @@ class Config:
             config = self.__getConfigJSON()
             # config is the raw json, input_map is specifically the input mapping
             # (eg, if the mapping is nested below the parent node of a larger config)
-            input_map = config['input_connections']
+            if 'input_connections' in config:
+                input_map = config['input_connections']
+                # check if file is in expected format
+                self.__verifyInputConfigStructure(input_map)
+            else:
+                input_map = {}
 
             if 'Constants' in config:
                 self.constantMap = config['Constants']
 
-            # check if file is in expected format
-            self.__verifyInputConfigStructure(input_map)
+
             return input_map
         except:
             print('Config file error -- {}'.format(self.absolute_path))

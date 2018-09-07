@@ -26,6 +26,16 @@ class TestCachedDataSpecificConfig(TestCase):
         actual = self.data.getIncomingConnectionNames()
         self.assertCountEqual(expected, actual)
 
+class TestNoInputs(TestCase):
+    def setUp(self):
+        file = getTestFileName('no_input_data_config')
+        self.data = CachedData(file)
+
+    def testNoInput(self):
+        expected = []
+        actual = self.data.getIncomingConnectionNames()
+        self.assertEqual(expected, actual)
+
 
 class TestWorkflowConstants(TestCase):
     def setUp(self):
