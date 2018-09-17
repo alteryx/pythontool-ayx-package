@@ -1,10 +1,12 @@
 import os
+from pathlib import Path
 import json
 import sqlite3
 import pandas as pd
 from re import findall
 from functools import reduce
 from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr
+
 
 class ayxPandas(pd.core.frame.DataFrame):
     def __init__(self, *args, **kwargs):
@@ -842,8 +844,9 @@ class Config:
         # set attributes
         self.filepath = filepath
         self.absolute_path = os.path.abspath(self.filepath)
-        self.constantMap = {}
-        self.input_file_map = self.__getInputFileMap()
+        ret_val = self.__getInputFileMap()
+        self.input_file_map = ret_val["input_map"]
+        self.constant_map = ret_val["constant_map"]
 
     def __getConfigJSON(self):
         if self.debug:
@@ -888,39 +891,31 @@ class Config:
             if 'input_connections' in config:
                 input_map = config['input_connections']
                 # check if file is in expected format
-                self.__verifyInputConfigStructure(input_map)
+
             else:
                 input_map = {}
 
             if 'Constants' in config:
-                self.constantMap = config['Constants']
+                constant_map = config['Constants']
+                self.__verifyConstantMap(constant_map)
+            else:
+                constant_map = {}
 
-
-            return input_map
+            return {"input_map":input_map, "constant_map" : constant_map}
         except:
             print('Config file error -- {}'.format(self.absolute_path))
             raise
 
     # verify that the config json is in the expected structure
-    def __verifyInputConfigStructure(self, d):
+    def __verifyConstantMap(self, constant_map):
 
         #Workflow Constants
-        if not isinstance(self.constantMap,dict):
+        if not isinstance(constant_map, dict):
             raise TypeError('Constants value must be a python dict')
-        for k, v in self.constantMap.items():
+        for k, v in constant_map.items():
             if not isinstance(k, str):
                 raise ValueError('Constants keys must be strings')
             # v however, could be a string, float, or int
-
-        #input files
-        if not isinstance(d, dict):
-            raise TypeError('Input config must be a python dict')
-        elif not all(isinstance(item, str) for item in d.keys()):
-            raise ValueError('All input connection names must be strings')
-        elif not all(isinstance(d[item], str) for item in d.keys()):
-            raise ValueError('All filenames must be strings')
-        else:
-            return True
 
 
 
@@ -959,26 +954,27 @@ class CachedData:
         else:
             return input_file_map[incoming_connection_name]
 
-    def getWorkflowConstant(self, constantName, windowsToUnixPath=False):
+    def getWorkflowConstant(self, constant_name, return_as_path=False):
         if self.debug:
-            print('Attempting to get the cached workflowConstant for incoming constant "{}"'.format(constantName))
+            print('Attempting to get the cached workflowConstant for incoming constant "{}"'.format(constant_name))
 
         # error if connection name is not a string
 
-        if not isinstance(constantName, str):
+        if not isinstance(constant_name, str):
             raise TypeError(''.join(['Constant name must be a string value. (eg, "#1")']))
 
 
         # error if connection name is not a named key in the config json (dict)
-        if constantName not in self.config.constantMap:
+        if constant_name not in self.config.constant_map:
             raise ReferenceError(''.join([
-                'The Constant "{}" does not exist'.format(constantName),
+                'The Constant "{}" does not exist'.format(constant_name),
                 ' -- make sure you typed it exactly the same in the Alteryx GUI and your python code.'
             ]))
         else:
-            val = self.config.constantMap[constantName]
-            if windowsToUnixPath and isinstance(val, str):
-                val = val.replace("\\", "/")
+            val = self.config.constant_map[constant_name]
+            if return_as_path and isinstance(val, str):
+                unix_path_string = val.replace("\\", "/")
+                val = Path(unix_path_string)
 
             return val
 

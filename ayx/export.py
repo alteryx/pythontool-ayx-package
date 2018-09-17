@@ -10,8 +10,8 @@ def help(debug=None, **kwargs):
     '''
     __Help__(debug=debug).display()
 
-def getWorkflowConstant(constantName,debug=None, windowsToUnixPath=False, **kwargs):
-    return __CachedData__(debug=debug).getWorkflowConstant(constantName, windowsToUnixPath, **kwargs)
+def getWorkflowConstant(constantName,debug=None, return_as_path=False, **kwargs):
+    return __CachedData__(debug=debug).getWorkflowConstant(constantName, return_as_path, **kwargs)
 
 def read(incoming_connection_name, debug=None, **kwargs):
     '''

@@ -3,6 +3,7 @@ import sqlite3
 from unittest import TestCase
 from ayx.CachedData import CachedData
 from ayx.tests.testdata.datafiles import getTestFileName
+from pathlib import Path
 
 class TestCachedDataRead(TestCase):
 
@@ -54,8 +55,10 @@ class TestWorkflowConstants(TestCase):
         itrNumActual = self.data.getWorkflowConstant("Engine.IterationNumber")
         self.assertEqual(0, itrNumActual)
 
-        winDir = self.data.getWorkflowConstant("Engine.ModuleDirectory")
-        self.assertEqual("s:\\Alteryx\\bin_x64\\Debug\\", winDir)
+        win_dir = self.data.getWorkflowConstant("Engine.ModuleDirectory")
+        self.assertEqual("s:\\Alteryx\\bin_x64\\Debug\\", win_dir)
 
-        unixDir = self.data.getWorkflowConstant("Engine.ModuleDirectory", windowsToUnixPath=True)
-        self.assertEqual("s:/Alteryx/bin_x64/Debug/", unixDir)
+        python_path = self.data.getWorkflowConstant("Engine.ModuleDirectory", return_as_path=True)
+        expected_path = Path('s:/')
+        expected_path = expected_path / "Alteryx" / "bin_x64" / "Debug"
+        self.assertEqual(expected_path, python_path)

@@ -31,12 +31,12 @@ class Help:
         * **Alteryx.installPackages(&nbsp;**<span style="color:blue">"*&lt;package name or list of package names&gt;"&nbsp;*</span>**)**
         *Package(s) will be installed from PyPI. [<span style="font-weight:bold">Note:</span> An internet connection is required. Also, if using an admin install of Alteryx, Alteryx must be opened in admin mode to install packages. Non-admin installs do not have this restriction.]*
         > ```Alteryx.installPackages("tensorflow")```<br/>```Alteryx.installPackages(["keras","theano","gensim"])```
-        * **Alteryx.getWorkflowConstant( &nbsp;**<span style="color:blue">"*&lt;constName,windowsToUnixPath=True&gt;"&nbsp;*</span>**)**
-        *The Alteryx GUI Workflow Constant will be returned (if it exists) as either a string or a double or an int, depending on what is put in the AlteryxGUI. If the constName does not exist, it throws a ReferenceException. If you are SURE it is in the Alteryx GUI and it isn't showing up in python... make sure you didn't try to pass a string ("foobar") as a number.<br/> windowsToUnixPath will change slash styles, the default value is False*
+        * **Alteryx.getWorkflowConstant( &nbsp;**<span style="color:blue">"*&lt;const_name,return_path=False&gt;"&nbsp;*</span>**)**
+        *The Alteryx GUI Workflow Constant will be returned (if it exists) as either a string or a double or an int, depending on what is put in the AlteryxGUI. If the const_name does not exist, it throws a ReferenceException. If you are SURE it is in the Alteryx GUI and it isn't showing up in python... make sure you didn't try to pass a string ("foobar") as a number.<br/> return_path will return a python 3.4 pathlib instead of a string (please use this so linux/windows slash direction problems go away). The default value is False*
         > ```d = Alteryx.getWorkflowConstant("Engine.WorkflowDirectory")```<br/>```print(d)```
         >► <span style="color:grey">*s:\\Alteryx\\bin_x64\\Debug\\*</span>
-        >```ud  = Alteryx.getWorkflowConstant("Engine.WorkflowDirectory",windowsToUnixPath=True)```<br/>```print(d)```
-         >► <span style="color:grey">*s:/Alteryx/bin_x64/Debug/*</span>
+        >```ud  = Alteryx.getWorkflowConstant("Engine.WorkflowDirectory",return_path=True)```<br/>```ud```
+         >► <span style="color:grey">*WindowsPath('s:/Alteryx/bin_x64/Debug')*</span>
         '''
 
 
