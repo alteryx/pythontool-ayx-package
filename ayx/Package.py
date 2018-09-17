@@ -1,5 +1,5 @@
 import sys, io, subprocess
-
+# from ayx.packages import required as required_packages
 
 
 def packageIsInstalled(pkg):
@@ -29,7 +29,8 @@ def installPackages(package, install_type=None, debug=None):
     if install_type is None:
         install_type = 'install'
     elif isinstance(install_type, str):
-        pass
+        if install_type == 'uninstall':
+            install_type = 'uninstall -y'
     # otherwise, attempt to concatenate params together
     # eg, ['install','--user'] --> 'install --user'
     else:
@@ -65,7 +66,7 @@ def installPackages(package, install_type=None, debug=None):
 
     ## attempt to install -- approach #2
     try:
-        print('Installing... \n(this may take a minute depending on the package size and other factors)')
+        print('Installing... \n(this may take a minute depending on the package size, dependencies, and other factors)')
         if debug:
             print(' '.join(['python -m pip'] + pip_args_list))
         # run "pip install <package>"

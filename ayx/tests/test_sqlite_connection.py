@@ -1,5 +1,6 @@
 import os
-import sqlite3
+# from sqlalchemy.engine.base import Connection as DbConnection
+from sqlite3 import Connection as DbConnection
 from unittest import TestCase
 from ayx.CachedData import SqliteDb
 from ayx.tests.testdata.datafiles import getTestFileName
@@ -15,12 +16,12 @@ class TestSqliteConnectionOpen(TestCase):
     def testConnectionCreated(self):
         self.assertTrue(
             hasattr(self.existing_db, 'connection') and
-            type(self.existing_db.connection) is sqlite3.Connection
+            type(self.existing_db.connection) is DbConnection
             )
 
     def testConnectionClosed(self):
         self.existing_db.closeConnection()
         self.assertFalse(
             hasattr(self.existing_db, 'connection') and
-            type(self.existing_db.connection) is sqlite3.Connection
+            type(self.existing_db.connection) is DbConnection
             )

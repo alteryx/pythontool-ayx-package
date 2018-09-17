@@ -28,4 +28,4 @@ class TestSqliteFileMissing(TestCase):
         self.nonexistent_db = SqliteDb(self.nonexistent_db_filepath, debug=True)
 
     def testSqliteFileDoesNotExist(self):
-        self.assertRaises(FileNotFoundError, self.nonexistent_db.openConnection)
+        self.assertRaises(ReferenceError, self.nonexistent_db.openConnection)

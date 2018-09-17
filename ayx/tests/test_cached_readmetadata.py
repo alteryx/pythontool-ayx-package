@@ -47,4 +47,4 @@ class TestCachedDataRead(TestCase):
                 if 'length' not in field_metadata:
                     self.fail('length attribute is missing for field {}'.format(field))
                 else:
-                    self.assertIsInstance(field_metadata['length'], tuple)
+                    self.assertIsInstance(field_metadata['length'], (int, float))

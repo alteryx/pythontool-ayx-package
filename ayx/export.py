@@ -37,11 +37,11 @@ def readMetadata(incoming_connection_name, debug=None, **kwargs):
     '''
     return __CachedData__(debug=debug).readMetadata(incoming_connection_name, **kwargs)
 
-def write(pandas_df, outgoing_connection_number, debug=None, **kwargs):
+def write(pandas_df, outgoing_connection_number, columns=None, debug=None, **kwargs):
     '''
     When running the workflow in Alteryx, this function will convert a pandas data frame to an Alteryx data stream and pass it out through one of the tool's five output anchors. When called from the Jupyter notebook interactively, it will display a preview of the pandas dataframe.
     '''
-    return __CachedData__(debug=debug).write(pandas_df, outgoing_connection_number, **kwargs)
+    return __CachedData__(debug=debug).write(pandas_df, outgoing_connection_number, columns=columns, **kwargs)
 
 def getIncomingConnectionNames(debug=None, **kwargs):
     '''

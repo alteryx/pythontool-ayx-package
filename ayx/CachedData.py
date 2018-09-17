@@ -1,23 +1,12 @@
 import os
 import json
+# import sqlalchemy
 import sqlite3
 import pandas as pd
 from re import findall
 from functools import reduce
-from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr
+from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr, isDictMappingStrToStr
 
-class ayxPandas(pd.core.frame.DataFrame):
-    def __init__(self, *args, **kwargs):
-        pd.core.frame.DataFrame.__init__(self, *args, **kwargs)
-
-
-@pd.api.extensions.register_dataframe_accessor("ayx")
-class AyxAccessor(object):
-    def __init__(self, pandas_obj):
-        self._obj = pandas_obj
-
-        self.input_field_metadata = None
-        self.input_connection_name = None
 
 
 class MetadataTools:
@@ -231,6 +220,110 @@ class MetadataTools:
                 }
             }
 
+    def concatTypeLength(self, type_str, length=None, context=None):
+        if self.debug:
+            print('MetadataTools.concatTypeLength(type_str={}, length={}, context={})'\
+                        .format(type_str, length, context))
+
+        context_dict = self.__contextDict(context)
+
+        meta_info = self.columns['context'][context][type_str]
+        expected_length_dim = meta_info['expected_length_dim']
+        default_length = meta_info['default_length']
+
+        if length is None:
+            length_tuple = default_length
+        elif isinstance(length, int):
+            length_tuple = (length,)
+        elif isinstance(length, float):
+            length_tuple = self.__getLengthOnly(str(length))
+        elif isinstance(length, str):
+            length_tuple = self.__getLengthOnly(length)
+        elif isinstance(length, tuple):
+            length_tuple = length
+        else:
+            raise TypeError('field length must be a string or tuple')
+
+        # check if valid
+        try:
+            if ((expected_length_dim == 0) ):
+                length_tuple = ()
+            self.__isValidFieldTypeLength(type_str, length_tuple, context=context, error_if_invalid=True)
+        except:
+            print(' '.join([
+                'length_tuple ({}) is invalid for type `{}`',
+                'in context `{}`'
+                ]).format(length_tuple, type_str, context)
+                )
+            raise
+
+        length_str = self.convertLengthTupleToContext(length_tuple, context)
+
+        return '{} {}'.format(type_str, length_str).strip()
+
+
+
+    def convertLengthTupleToContext(self, length_tuple, context=None):
+        if self.debug:
+            print('MetadataTools.convertLengthTupleToContext(length_tuple, context=None)'\
+                        .format(length_tuple, context))
+
+        if not isinstance(length_tuple, tuple):
+            raise TypeError('length_tuple must be a tuple or None')
+
+        context_dict = self.__contextDict(context)
+
+        if length_tuple is None:
+            length_tuple = ()
+        elif isinstance(length_tuple, str):
+            length_tuple = self.__getLengthOnly(length_tuple)
+        else:
+            try:
+                self.__isValidFieldLengthTuple(length_tuple, error_if_invalid=True)
+            except:
+                raise
+
+        length_dim = len(length_tuple)
+
+
+        # if length_dim == 0:
+        #     return ''
+        # elif length_dim == 1:
+        #     if context_dict['sqlite']:
+        #         return '({})'.format(length_tuple[0])
+        #     if context_dict['ayx']:
+        #         return '{}'.format(length_tuple[0])
+        # elif length_dim == 2:
+        #     if context_dict['sqlite']:
+        #         return '({}, {})'.format(length_tuple[0], length_tuple[1])
+        #     if context_dict['ayx']:
+        #         return '{}.{}'.format(length_tuple[0], length_tuple[1])
+        # # if we got this far, something went wrong...
+        # raise ValueError(' '.join([
+        #     'unable to convert {} to context `{}`'
+        #     ]).format(length_tuple, context)
+        #     )
+
+
+        if context_dict['sqlite']:
+            if length_dim == 0:
+                new_length = ''
+            elif length_dim == 1:
+                new_length = '({})'.format(length_tuple[0])
+            elif length_dim == 2:
+                new_length = '({}, {})'.format(length_tuple[0], length_tuple[1])
+        if context_dict['ayx']:
+            if length_dim == 0:
+                new_length = None
+            elif length_dim == 1:
+                new_length = length_tuple[0]
+            elif length_dim == 2:
+                new_length = float(
+                        '{}.{}'.format(length_tuple[0], length_tuple[1])
+                        )
+        return new_length
+
+
 
 
     def convertTypeString(self, field_type_and_length, from_context=None, to_context=None):
@@ -248,16 +341,18 @@ class MetadataTools:
         # if valid context provided, convert to dict -- ex/ {'ayx': True, 'sqlite': False}
         context_dict = self.__contextDict(from_context)
         # # parse type and length
-        # field_type_and_length_d = self.parseFieldTypeAndLengthStr(
-        #     field_type_and_length,
-        #     context = from_context
-        #     )
-        # field_type = field_type_and_length_d['type']
-        field_type = self.__getTypeOnly(field_type_and_length)
-        try:
-            self.__isValidFieldTypeStr(field_type, context=from_context, error_if_invalid=False)
-        except:
-            raise
+        field_type_and_length_d = self.parseFieldTypeAndLengthStr(
+            field_type_and_length,
+            context = from_context
+            )
+        field_type = field_type_and_length_d['type']
+        field_length = field_type_and_length_d['length']
+        # field_type = self.__getTypeOnly(field_type_and_length)
+        # try:
+        #     self.__isValidFieldTypeStr(field_type, context=from_context, error_if_invalid=False)
+        # except:
+        #     raise
+
          # lookup field type conversion
         if not(from_context in self.columns['context']):
             raise ReferenceError('from_context is invalid: {}'.format(from_context))
@@ -286,8 +381,17 @@ class MetadataTools:
                 )
         # if all is good, then return
         else:
-            return self.columns['context'][from_context][field_type]['conversion_types'][to_context][0]
+            # get the converted field type
+            converted_type =  self.columns['context'][from_context][field_type]['conversion_types'][to_context][0]
+            # get the expected length dimension and default value for converted type
+            converted_type_metadata = self.columns['context'][to_context][converted_type]
+            converted_type_length_dim = converted_type_metadata['expected_length_dim']
+            converted_type_default_length = converted_type_metadata['default_length']
+            # if expected length is 0, use default
+            if (converted_type_length_dim == 0) or (len(field_length) == 0):
+                field_length = converted_type_default_length
 
+            return {'type': converted_type, 'length': field_length}
 
     # parse out the length from string containing both type and length (eg, 'CHAR(7)')
     # returns tuple (len=2 only in case of fixed decimal)
@@ -297,11 +401,17 @@ class MetadataTools:
             raise TypeError('Invalid field type/length string: {}'\
                     .format(convertObjToStr(field_type_and_length)))
         # parse field length tuple from string
-        field_length_tuple = tuple(findall(r"\d+",field_type_and_length))
+        field_length_str_list = findall(r"\b\d+",field_type_and_length)
+        field_length_tuple = tuple(
+            map(lambda length: int(length), field_length_str_list)
+            )
         # if invalid tuple, throw an error
         try:
             self.__isValidFieldLengthTuple(field_length_tuple, error_if_invalid=True)
         except:
+            print("Invalid field length parsed out of from: {}".format(
+                field_type_and_length
+                ))
             raise
         # return the tuple representing the field length/precision
         return field_length_tuple
@@ -317,7 +427,7 @@ class MetadataTools:
             raise TypeError('Invalid field type/length string: {}'\
                     .format(convertObjToStr(field_type_and_length)))
         # parse column type out of string containing type and length
-        parsed_type_list = findall(r"[A-Za-z]\w+\s?\w+", field_type_and_length)
+        parsed_type_list = findall(r"\b[A-Za-z]\w+(?:\s[A-Za-z]\w+)?\b", field_type_and_length)
         # there should only ever be exactly 1 result found, otherwise throw error
         if len(parsed_type_list) == 1:
             # get the first (and only) item in the list
@@ -448,15 +558,23 @@ class MetadataTools:
                 (context_dict[context]) and
                 (field_type_str in self.columns['context'][context])
             ):
-                expected_length = self.columns['context'][context][field_type_str]['expected_length_dim']
+                field_type_metadata = self.columns['context'][context][field_type_str]
+                expected_length = field_type_metadata['expected_length_dim']
+                default_length = field_type_metadata['default_length']
                 if (len(field_length_tuple) == expected_length):
+                    valid = True
+                    return valid
+                elif (
+                    (expected_length == 0) and
+                    (default_length == field_length_tuple)
+                ):
                     valid = True
                     return valid
                 else:
                     context_reason = {'context': context, 'expected_length': expected_length}
                     reasons.append(context_reason)
         if not valid:
-            raise ValueError(''.join([
+            raise ValueError(' '.join([
                 'Field length tuple ({}) for specified field',
                 'type ({}).',
                 'Expected tuple length: {}'
@@ -486,21 +604,16 @@ class MetadataTools:
             # check that field_length_tuple doesn't contain more than two items
             if len(field_length_tuple) > 2:
                 raise ValueError(''.join([
-                            'Invalid field_length_tuple value: {}',
-                            'Must have length of 0, 1, or 2.'
-                            ]).format(convertObjToStr(field_length_tuple)))
+                    'Invalid field_length_tuple value: {}',
+                    'Must have length of 0, 1, or 2.'
+                    ]).format(convertObjToStr(field_length_tuple)))
             # check if each element is an int
             for element in field_length_tuple:
-                    if not isinstance(element, str):
-                        raise TypeError(''.join([
-                            'Invalid element in field_length_tuple: {}',
-                            'Must be a string.'
-                            ]).format(convertObjToStr(element)))
-                    if round(int(element), 0) == element:
-                        raise TypeError(''.join([
-                            'Invalid element in field_length_tuple: {}',
-                            'Must be a string representing an integer.'
-                            ]).format(convertObjToStr(element)))
+                if not isinstance(element, int):
+                    raise TypeError(''.join([
+                        'Invalid element in field_length_tuple: {}',
+                        'Must be an integer.'
+                        ]).format(convertObjToStr(element)))
             # if we made it this far without erroring, then input value is valid
             return True
         # if an error was caught, then an invalid value was provided
@@ -597,8 +710,6 @@ class MetadataTools:
 
 
 
-
-
 class SqliteDb:
     def __init__(self, db_path=None, create_new=None, debug=None):
 
@@ -638,7 +749,11 @@ class SqliteDb:
         if not self.__isConnectionOpen():
             if self.debug:
                 print('Attempting to open connection to {}'.format(self.filepath))
-            self.connection = self.__returnConnection()
+            try:
+                self.connection = self.__returnConnection()
+            except FileNotFoundError as e:
+                print(e)
+                raise ReferenceError("You must run the workflow first in order to make a cached copy of the incoming data available for development purposes within this Jupyter notebook.")
         # print connection status
         if self.debug:
             print('Connection is open: {}'.format(
@@ -650,6 +765,7 @@ class SqliteDb:
             print('Connection status: {}'.format(self.connection))
         if error_if_closed is None:
             error_if_closed = False
+        # if hasattr(self, 'connection') and isinstance(self.connection, sqlalchemy.engine.base.Connection):
         if hasattr(self, 'connection') and isinstance(self.connection, sqlite3.Connection):
             return True
         else:
@@ -669,6 +785,7 @@ class SqliteDb:
             # to confirm that it is a valid sqlite db
             try:
                 connection = sqlite3.connect(self.filepath)
+                # connection = sqlalchemy.create_engine('sqlite:///{}'.format(self.filepath)).connect()
                 connection.execute("select * from sqlite_master limit 1")
                 return connection
             except:
@@ -798,11 +915,11 @@ class SqliteDb:
                 ]))
 
 
-    def writeData(self, pandas_df, table):
+    def writeData(self, pandas_df, table, dtype=None):
         if self.debug:
             print('Attempting to write data to table "{}"'.format(table))
         try:
-            pandas_df.to_sql(table, self.connection, if_exists='replace', index=False)
+            pandas_df.to_sql(table, self.connection, if_exists='replace', index=False, dtype=dtype)
             if self.debug:
                 print(fileErrorMsg(
                     'Success writing output table "{}"'.format(table),
@@ -813,6 +930,9 @@ class SqliteDb:
                 'Error: unable to write output table "{}"'.format(table),
                 self.filepath))
             raise
+
+
+
 
 
 class Config:
@@ -885,25 +1005,13 @@ class Config:
             config = self.__getConfigJSON()
             # config is the raw json, input_map is specifically the input mapping
             # (eg, if the mapping is nested below the parent node of a larger config)
-            input_map = config['input_connections'] 
+            input_map = config['input_connections']
             # check if file is in expected format
-            self.__verifyInputConfigStructure(input_map)
-            return input_map
+            if isDictMappingStrToStr(input_map):
+                return input_map
         except:
             print('Config file error -- {}'.format(self.absolute_path))
             raise
-
-    # verify that the config json is in the expected structure
-    def __verifyInputConfigStructure(self, d):
-
-        if not isinstance(d, dict):
-            raise TypeError('Input config must be a python dict')
-        elif not all(isinstance(item, str) for item in d.keys()):
-            raise ValueError('All input connection names must be strings')
-        elif not all(isinstance(d[item], str) for item in d.keys()):
-            raise ValueError('All filenames must be strings')
-        else:
-            return True
 
 
 
@@ -970,24 +1078,18 @@ class CachedData:
                 raise
 
 
+
     def write(self, pandas_df, outgoing_connection_number, columns=None):
+
+
 
         if self.debug:
             print('Attempting to write out cached data to outgoing connection "{}"'.format(
                 outgoing_connection_number
                 ))
 
-        if columns is None:
-            pass
-        elif isinstance(columns, dict):
-            pass
-        elif isinstance(columns, list):
-            pass
-        else:
-            raise TypeError('columns is optional, but if provided, must be a dict or list')
 
-
-        msg_prefix = 'Alteryx.write(int): '
+        msg_prefix = 'Alteryx.write(pandas_df, outgoing_connection_number): '
         # error if connection number is not an int
         if not isinstance(outgoing_connection_number, int):
             raise TypeError(''.join(
@@ -1001,26 +1103,114 @@ class CachedData:
             raise TypeError('A pandas dataframe is required for passing data to outgoing connections in Alteryx')
         elif not isinstance(pandas_df, pd.core.frame.DataFrame):
             raise TypeError('Currently only pandas dataframes can be used to pass data to outgoing connections in Alteryx')
+
+        # get list of columns in input data frame
+        pandas_cols = list(pandas_df.columns)
+
+        metadata_tools = MetadataTools(debug=self.debug)
+        expected_column_attributes = ['name','type','length']
+
+
+        renames = {}
+        dtypes = {}
+
+
+        # check optional 'columns' arg
+        if columns is None:
+            pass
+        elif isinstance(columns, dict):
+            # loop through each column and put into proper format for
+            # corresponding pandas argument
+            for col in columns.keys():
+                new_column_info = columns[col]
+
+                if 'name' in new_column_info:
+                    new_name = new_column_info['name']
+                    renames[col] = new_name
+                else:
+                    new_name = col
+
+                new_type = None
+                new_length = None
+                if 'type' in new_column_info:
+                    # convert Alteryx type to sqlite type
+                    new_type = new_column_info['type']
+                if 'length' in new_column_info:
+                    new_length = new_column_info['length']
+
+
+                if (new_type is not None):
+                    if (new_length is not None):
+                        new_type_length = '{} {}'.format(new_type, new_length)
+                    else:
+                        new_type_length = '{}'.format(new_type)
+                elif (new_length is not None):
+                    raise ValueError('length cannot be specified without a type')
+                else:
+                    new_type_length = None
+
+
+                if new_type_length is not None:
+                    db_col_metadata = metadata_tools.convertTypeString(
+                        new_type_length,
+                        from_context='ayx',
+                        to_context='sqlite'
+                        )
+                    db_col_type_only = db_col_metadata['type']
+                    new_length = db_col_metadata['length']
+
+
+                    # # get length (if any) from metadata update instructions
+                    # if 'length' in new_column_info:
+                    #     new_length = new_column_info['length']
+                    # else:
+                    #     new_length = None
+
+                    # concatenate type and length (use default if necessary)
+                    db_col_type = metadata_tools.concatTypeLength(
+                        db_col_type_only,
+                        new_length,
+                        context='sqlite'
+                        )
+                    # set in dtypes dict
+                    dtypes[new_name] = db_col_type
+
+
+        elif isinstance(columns, list):
+            pass
         else:
-            # create custom sqlite object
-            with SqliteDb(
-                'output_{}.sqlite'.format(outgoing_connection_number),
-                create_new=True,
-                debug=self.debug
-                ) as db:
-                msg_action = 'writing outgoing connection data {}'.format(
-                    outgoing_connection_number
-                    )
-                try:
-                    # get the data from the sql db (if only one table exists, no need to specify the table name)
-                    data = db.writeData(pandas_df, 'data')
-                    # print success message
-                    print(''.join(['SUCCESS: ', msg_action]))
-                    # return the data
-                    return data
-                except:
-                    print(''.join(['ERROR: ', msg_action]))
-                    raise
+            raise TypeError('columns is optional, but if provided, must be a dict or list')
+
+
+        if len(dtypes.keys()) == 0:
+            dtypes = None
+
+        if len(renames.keys()) == 0:
+            renames = None
+            pandas_df_out = pandas_df
+        else:
+            pandas_df_out = pandas_df.rename(columns=renames, inplace=False)
+
+
+        # create custom sqlite object
+        with SqliteDb(
+            'output_{}.sqlite'.format(outgoing_connection_number),
+            create_new=True,
+            debug=self.debug
+            ) as db:
+            msg_action = 'writing outgoing connection data {}'.format(
+                outgoing_connection_number
+                )
+            try:
+                # get the data from the sql db (if only one table exists, no need to specify the table name)
+                data = db.writeData(pandas_df_out, 'data', dtype=dtypes)
+                # print success message
+                print(''.join(['SUCCESS: ', msg_action]))
+                # return the data
+                return data
+            except:
+                print(''.join(['ERROR: ', msg_action]))
+                raise
 
 
     def getIncomingConnectionNames(self):
@@ -1062,13 +1252,14 @@ class CachedData:
             field_type = field_type_and_length_d['type']
             field_length = field_type_and_length_d['length']
             # set metadata
+            conversion = metadata_tools.convertTypeString(
+                '{} {}'.format(field_type, field_length),
+                from_context='sqlite',
+                to_context='ayx'
+                )
             metadata_dict[field_name] = {
-                'type': metadata_tools.convertTypeString(
-                    field_type,
-                    from_context='sqlite',
-                    to_context='ayx'
-                    ),
-                'length': field_length
+                'type': conversion['type'],
+                'length': conversion['length']
                 }
             updated_field_metadata = \
                     metadata_tools.supplementWithDefaultLengths(
@@ -1076,6 +1267,12 @@ class CachedData:
                         metadata_dict[field_name]['length'],
                         context='ayx'
                         )
+            updated_field_metadata['length'] = \
+                    metadata_tools.convertLengthTupleToContext(
+                        updated_field_metadata['length'],
+                        context='ayx'
+                        )
             metadata_dict[field_name] = updated_field_metadata
+            metadata_dict[field_name]
 
         return metadata_dict

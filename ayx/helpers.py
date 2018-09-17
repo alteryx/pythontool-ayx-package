@@ -85,6 +85,19 @@ def isString(var):
     return isinstance(var, str)
 
 
+def isDictMappingStrToStr(d):
+    try:
+        if not isinstance(d, dict):
+            raise TypeError('Input must be a python dict')
+        elif not all(isinstance(item, str) for item in d.keys()):
+            raise ValueError('All keys must be strings')
+        elif not all(isinstance(d[item], str) for item in d.keys()):
+            raise ValueError('All mapped values must be strings')
+        else:
+            return True
+    except:
+        print('Input: {}'.format(convertObjToStr(d)))
+        raise
 
 def prepareMultilineMarkdownForDisplay(markdown):
     # split each line of input markdown into items in a list

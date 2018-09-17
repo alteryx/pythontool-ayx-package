@@ -1,5 +1,6 @@
 from setuptools import setup
 from ayx.version import version
+from ayx.packages import all_packages
 
 def readme():
     with open('README.rst') as f:
@@ -15,21 +16,6 @@ setup(name='ayx',
       tests_require=['nose'],
       test_suite='nose.collector',
       packages=['ayx'],
-      install_requires=[
-          # packages required by ayx
-          'pandas',
-          'IPython',
-          # additional packages included with Alteryx install
-          'jupyter',
-    	  'SQLAlchemy',
-          'pywin32',
-          'matplotlib',
-          'numpy',
-          'requests',
-          'scikit-learn',
-          'scipy',
-          'six',
-          'statsmodels'
-          ],
+      install_requires=all_packages,
       zip_safe=False
       )
