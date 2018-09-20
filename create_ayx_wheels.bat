@@ -4,7 +4,7 @@ if exist ".\depsenv\" rd /s /q ".\depsenv\"
 REM :: delete the output folder containing the wheels and requirements.txt file
 del ".\deps\*" /s /q
 REM :: create a new virtualenv
-virtualenv depsenv
+python -m venv depsenv
 REM :: activate the virtualenv
 CALL "depsenv/scripts/activate.bat"
 @echo on
@@ -12,6 +12,9 @@ CALL "depsenv/scripts/activate.bat"
 :: PIP INSTALL
 REM :: install the ayx package into the virtualenv (this takes a few mins)
 pip install .
+REM :: setup to create wheels
+pip install wheel
+python setup.py bdist_wheel
 REM :: create a wheel for the ayx package
 python setup.py sdist bdist_wheel -d "deps\wheels"
 REM :: create a requirements.txt file that contains 'ayx' and all dependent packages

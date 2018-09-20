@@ -1,11 +1,12 @@
 import os
+from pathlib import Path
 import json
 # import sqlalchemy
 import sqlite3
 import pandas as pd
 from re import findall
 from functools import reduce
-from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr, isDictMappingStrToStr
+from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr, isDictMappingStrToStr, convertToType
 
 
 
@@ -940,7 +941,6 @@ class Config:
 
         # default value for config filepath
         if filepath is None:
-            # config_filepath = 'config.ini'
             filepath = 'jupyterPipes.json'
 
         elif not isinstance(filepath, str):
@@ -962,8 +962,12 @@ class Config:
         # set attributes
         self.filepath = filepath
         self.absolute_path = os.path.abspath(self.filepath)
-        self.input_file_map = self.__getInputFileMap()
+        jupyter_pipes_dict = self.__getInputFileMap()
+        self.input_file_map = jupyter_pipes_dict["input_map"]
+        self.constant_map = jupyter_pipes_dict["constant_map"]
 
+        if len(self.constant_map) == 0:
+            raise LookupError('You must run the workflow first to make cached data and workflow constants available to the Python tool')
 
     def __getConfigJSON(self):
         if self.debug:
@@ -1005,20 +1009,54 @@ class Config:
             config = self.__getConfigJSON()
             # config is the raw json, input_map is specifically the input mapping
             # (eg, if the mapping is nested below the parent node of a larger config)
-            input_map = config['input_connections']
-            # check if file is in expected format
-            if isDictMappingStrToStr(input_map):
-                return input_map
+            if 'input_connections' in config:
+                input_map = config['input_connections']
+                # check if file is in expected format
+                try:
+                    isDictMappingStrToStr(input_map)
+                except:
+                    pass
+            else:
+                input_map = {}
+
+            if 'Constants' in config:
+                constant_map = config['Constants']
+                self.__verifyConstantMap(constant_map)
+            else:
+                constant_map = {}
+
+            return {"input_map":input_map, "constant_map" : constant_map}
         except:
             print('Config file error -- {}'.format(self.absolute_path))
             raise
+
+    # verify that the config json is in the expected structure
+    def __verifyConstantMap(self, constant_map):
+
+        #Workflow Constants
+        if not isinstance(constant_map, dict):
+            raise TypeError('Constants value must be a python dict')
+        for key, value in constant_map.items():
+            if not isinstance(key, str):
+                raise TypeError(
+                    '\n'.join([
+                        'Constants keys must be strings',
+                        'Invalid type: {}',
+                        'Invalid value: {}']).format(type(key), key)
+                    )
+            elif not isinstance(value, (str, float, int)):
+                raise TypeError(
+                    '\n'.join([
+                        'Constants values must be str, float, or int',
+                        'Invalid type: {}',
+                        'Invalid value: {}']).format(type(value), value)
+                    )
+        return True
 
 
 
 class CachedData:
     def __init__(self, config_filepath=None, debug=None):
-
-        self.config = Config(filepath=config_filepath, debug=debug)
         # check debug parameter
         if debug is None:
             self.debug = False
@@ -1026,6 +1064,9 @@ class CachedData:
             self.debug = debug
         else:
             raise TypeError('debug parameter must True or False')
+
+        # obtain input data mappings and workflow constants
+        self.config = Config(filepath=config_filepath, debug=debug)
 
 
     def __getIncomingConnectionFilepath(self, incoming_connection_name):
@@ -1049,6 +1090,79 @@ class CachedData:
                 ]))
         else:
             return input_file_map[incoming_connection_name]
+
+    def getWorkflowConstant(self, constant_name):
+        if self.debug:
+            print('Attempting to get the cached workflow constant "{}"'.format(constant_name))
+
+        # error if constant name is not a string
+        if not isinstance(constant_name, str):
+            raise TypeError(''.join([
+                'Constant name must be a string value, but instead is {}: {}'
+                ]).format(
+                    type(constant_name),
+                    constant_name
+                    )
+                )
+
+        # if there are no constants
+        if len(self.config.constant_map) == 0:
+            raise RuntimeError("You must run the workflow first in order to make constants available in this tool")
+
+        # error if connection name is not a named key in the config json (dict)
+        # -- but first see if we can offer a suggestion to help the user identify their mistake
+        if constant_name not in self.config.constant_map:
+
+            # create a dict mapping of {CONSTANT_NAME: constant_name}
+            uppercase_to_actual_constant_names = \
+                    {x.upper():x for x in self.config.constant_map}
+            # save uppercase constant name to a var so we
+            uppercase_constant_name = constant_name.upper()
+            # initalize suggested constant name (no suggestion to start)
+            suggested = None
+
+            # is it a case error? check to see any keys match with case insensitivity
+            if suggested is None:
+                if uppercase_constant_name in uppercase_to_actual_constant_names:
+                    suggested = uppercase_to_actual_constant_names[uppercase_constant_name]
+
+            # did they forget to add the Engine/Question/User prefix?
+            if suggested is None:
+                for prefix in ['Engine', 'Question', 'User']:
+                    name_with_prefix = '{}.{}'.format(prefix, constant_name).upper()
+                    if (name_with_prefix in uppercase_to_actual_constant_names):
+                        suggested = uppercase_to_actual_constant_names[uppercase_constant_name]
+                        break
+
+            # did they miss some other prefixy part of the constant name?
+            if suggested is None:
+                for existing_key in self.config.constant_map:
+                    if (existing_key.split('.')[-1].upper() ==
+                        constant_name.split('.')[-1].upper()
+                    ):
+                        suggested = existing_key
+                        break
+
+            # if we've got a suggestion, throw error and propose suggestion
+            if suggested is not None:
+                print(' '.join([
+                    'The constant "{}" does not exist'.format(constant_name),
+                    '-- did you mean "{}" ?'.format(suggested)
+                    ]))
+            # otherwise, throw a general error that the constant isnt valid
+            else:
+                print(' '.join([
+                    'The constant "{}" does not exist'.format(constant_name),
+                    '-- double check the name and run the workflow again to',
+                    'refresh the constants available in this tool.'
+                    ]))
+
+            raise ReferenceError(
+                "Unable to find workflow constant {}".format(constant_name)
+                )
+        else:
+            val = self.config.constant_map[constant_name]
+            return val
 
     def read(self, incoming_connection_name):
 

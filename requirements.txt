@@ -1,3 +1,7 @@
 pandas
 IPython
 jupyter
+pywin32
+nose
+pylint
+pyqt5

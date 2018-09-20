@@ -1,10 +1,18 @@
 {
-  "constants": {
-    "User.test": "abc123"
-  },
-  "input_connections": {
-  	"#1": "4460abb7be83bae8f01b9bf1238a923c.sqlite",
-  	"#2": "input_ayx137028f06553292c2fbe34041601684b.sqlite",
-  	"1": "input_ayxc4ca4238a0b923820dcc509a6f75849b.sqlite"
-  }
+    "Constants":{
+        "Engine.GuiInteraction": "1",
+        "Engine.IterationNumber": 0,
+  			"Engine.ModuleDirectory": "s:\\Alteryx\\bin_x64\\Debug\\",
+  			"Engine.TempFilePath": "C:\\Users\\lramey\\AppData\\Local\\Temp\\Engine_17376_1afec4920f674e3a8c29be6225048da8_\\",
+  			"Engine.Version": "2018.3.0.9999",
+  			"Engine.WorkflowDirectory": "s:\\Alteryx\\bin_x64\\Debug\\",
+  			"Engine.WorkflowFileName": "[Unnamed Module]",
+  			"User.number1": 1,
+  			"User.number2": 232.9903432
+    },
+    "input_connections": {
+      	"#1": "4460abb7be83bae8f01b9bf1238a923c.sqlite",
+      	"#2": "input_ayx137028f06553292c2fbe34041601684b.sqlite",
+      	"1": "input_ayxc4ca4238a0b923820dcc509a6f75849b.sqlite"
+    }
 }

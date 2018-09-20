@@ -49,6 +49,12 @@ def getIncomingConnectionNames(debug=None, **kwargs):
     '''
     return __CachedData__(debug=debug).getIncomingConnectionNames(**kwargs)
 
+def getWorkflowConstant(constant_name, debug=None, **kwargs):
+    '''
+    This function will return the Alteryx workflow constant as a string, int, or float, depending on the value and whether the "#" checkbox is checked for the constant in the Alteryx GUI. Like the read function, getting workflow constants in the Python tool depends on the workflow being run first so that the Python tool will have cached the data and constants and made them available in the Jupyter notebook.
+    '''
+    return __CachedData__(debug=debug).getWorkflowConstant(constant_name, **kwargs)
+
 def installPackage(package, install_type=None, debug=None, **kwargs):
     '''
     This function will install a package or list of packages into the virtual environment used by the Python tool. If using an admin installation of Alteryx, you must run Alteryx as administrator in order to use this function and install packages.

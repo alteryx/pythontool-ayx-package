@@ -31,7 +31,10 @@ class Help:
         * **Alteryx.installPackages(&nbsp;**<span style="color:blue">"*&lt;package name or list of package names&gt;"&nbsp;*</span>**)**
         *Package(s) will be installed from PyPI. [<span style="font-weight:bold">Note:</span> An internet connection is required. Also, if using an admin install of Alteryx, Alteryx must be opened in admin mode to install packages. Non-admin installs do not have this restriction.]*
         > ```Alteryx.installPackages("tensorflow")```<br/>```Alteryx.installPackages(["keras","theano","gensim"])```
-
+        * **Alteryx.getWorkflowConstant( &nbsp;**<span style="color:blue">"*&lt;const_name,return_path=False&gt;"&nbsp;*</span>**)**
+        *The value of an Alteryx workflow constant (as shown on the Workflow Configuration's **Workflow** tab in Alteryx) will be returned as a string, int, or float (depending the value and whether the constant is set to numeric).
+        > ```Alteryx.getWorkflowConstant("Engine.WorkflowDirectory")```
+        > ► <span style="color:grey">*'C:\\Program Files\\Alteryx\\bin'*</span>
         '''
 
 

@@ -90,9 +90,9 @@ def isDictMappingStrToStr(d):
         if not isinstance(d, dict):
             raise TypeError('Input must be a python dict')
         elif not all(isinstance(item, str) for item in d.keys()):
-            raise ValueError('All keys must be strings')
+            raise TypeError('All keys must be strings')
         elif not all(isinstance(d[item], str) for item in d.keys()):
-            raise ValueError('All mapped values must be strings')
+            raise TypeError('All mapped values must be strings')
         else:
             return True
     except:
@@ -113,3 +113,20 @@ def prepareMultilineMarkdownForDisplay(markdown):
 def displayMarkdown(markdown):
     # display the prepared markdown as formatted text
     display(Markdown(markdown))
+
+
+def convertToType(value, datatype):
+    try:
+        # special case: string to bool
+        if (datatype is bool) and isinstance(value,str):
+            if value.strip()[0].upper() in ['T', 'Y']:
+                return True
+            elif value.strip()[0].upper() in ['F', 'N']:
+                return False
+        # general case
+        return datatype(value)
+    except Exception as e:
+        msg = "Unable to convert {} value to data type {}: {}\n>> {}"\
+                    .format(type(value), datatype, value, e)
+        print(msg)
+        raise
