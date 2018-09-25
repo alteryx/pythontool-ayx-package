@@ -4,7 +4,7 @@ if exist ".\depsenv\" rd /s /q ".\depsenv\"
 REM :: delete the output folder containing the wheels and requirements.txt file
 del ".\deps\*" /s /q
 REM :: create a new virtualenv
-python -m venv depsenv
+S:\3rdParty\Python\Miniconda3\python.exe -m venv depsenv
 REM :: activate the virtualenv
 CALL "depsenv/scripts/activate.bat"
 @echo on
