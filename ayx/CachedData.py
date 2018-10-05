@@ -770,7 +770,17 @@ class SqliteDb:
 
     def __exit__(self, type, value, traceback):
         self.closeConnection()
-        deleteFile(self.filepath, debug=self.debug)
+        # if temporary file, attempt to clean up on exit
+        if self.temporary:
+            try:
+                deleteFile(self.filepath, debug=self.debug)
+            except:
+                # (this is not the end of the world)
+                if self.debug:
+                    print(''.join([
+                        'Unable to delete temp file (will be cleanded up later',
+                        'by asset manager) -- {}'.format(self.filepath)
+                        ]))
 
     # open the connection
     def openConnection(self):

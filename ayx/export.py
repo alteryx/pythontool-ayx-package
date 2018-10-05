@@ -25,15 +25,38 @@ def readMetadata(incoming_connection_name, debug=None, **kwargs):
         >>> {
                 'field_1': {
                     'type': 'V_WString',
-                    'length': (1000,)
+                    'length': 1000
                     },
                 'field_2': {
                     'type': 'Int64',
-                    'length': (16,)
+                    'length': 16
                     }
                 }
 
     Like the Alteryx.read() function, when this function is executed by the user in the interactive configuration panel (through the Jupyter notebook interface), Alteryx.readMetadata() accesses cached data. Run the workflow once to cache the incoming data for the first time so that it can be used by the Python tool, and as a best practice, re-run the workflow after making workflow changes upstream of the Python tool, so that the Python script being written in the Python tool is using the same data that will be used when the workflow is executed in full. When refreshing the Python tool cache, you may want to put downstream tools into a disabled Tool Container.
+
+    This can also be with a pandas dataframe to generate its default output metadata (which can then be manipulated). For example:
+
+        import pandas as pd
+        pandas_df = pd.DataFrame([['a', 1], ['b', 0], ['c', 0]])
+        pandas_md = Alteryx.readMetadata(pandas_df)
+        print(pandas_md)
+        >>> {
+                0: {
+                    'type': 'V_WString',
+                    'length': 2147483647
+                    },
+                1: {
+                    'type': 'Int64',
+                    'length': 8
+                    }
+                }
+
+        pandas_md[0]['name'] = 'Field_1'
+        pandas_md[1] = {'name': 'Field_2', 'type': 'Boolean'}
+        Alteryx.write(pandas_df, 1, pandas_md)
+
+    [Note that Field_2 will only appear as Boolean in Alteryx datastream 1 flowing out of the tool, but will still appear as an integer in the pandas dataframe displayed by the Jupyter interface in the Python tool) ]
     '''
     return __CachedData__(debug=debug).readMetadata(incoming_connection_name, **kwargs)
 
