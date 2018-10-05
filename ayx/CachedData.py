@@ -1,12 +1,28 @@
+# (C) Copyright 2018 Alteryx, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
 import os
 from pathlib import Path
 import json
 # import sqlalchemy
 import sqlite3
+from uuid import uuid1
 import pandas as pd
 from re import findall
 from functools import reduce
-from ayx.helpers import fileErrorMsg, fileExists, tableNameIsValid, convertObjToStr, isDictMappingStrToStr, convertToType
+from ayx.helpers import fileErrorMsg, fileExists, deleteFile, tableNameIsValid, convertObjToStr, isDictMappingStrToStr, convertToType
 
 
 
@@ -712,7 +728,7 @@ class MetadataTools:
 
 
 class SqliteDb:
-    def __init__(self, db_path=None, create_new=None, debug=None):
+    def __init__(self, db_path=None, create_new=False, temporary=False, debug=None):
 
         # if no db_path specified, throw error
         if db_path is None:
@@ -725,6 +741,16 @@ class SqliteDb:
             self.create_new = create_new
         else:
             raise TypeError("create_new parameter must be boolean")
+
+        # default for temporary is false (throw error if file doesnt exist)+++
+        if temporary is None:
+            self.temporary = False
+        elif isinstance(temporary, bool):
+            self.temporary = temporary
+        else:
+            raise TypeError("temporary parameter must be boolean")
+
+
 
         # check debug parameter
         if debug is None:
@@ -744,6 +770,7 @@ class SqliteDb:
 
     def __exit__(self, type, value, traceback):
         self.closeConnection()
+        deleteFile(self.filepath, debug=self.debug)
 
     # open the connection
     def openConnection(self):
@@ -1339,23 +1366,56 @@ class CachedData:
             print('Attempting to get (cached) metadata for for incoming connection "{}"'.format(
                 incoming_connection_name
                 ))
+        # create a flag indicating whether input is a pandas dataframe
+        pandas_df_input_flag = \
+            isinstance(incoming_connection_name, pd.core.frame.DataFrame)
 
-        # get the filepath of the data
-        input_data_filepath = self.__getIncomingConnectionFilepath(
-            incoming_connection_name
-            )
-        # get the data from the sqlite file
-        with SqliteDb(
-            input_data_filepath,
-            create_new=False,
-            debug=self.debug
-        ) as db:
-            raw_metadata = db.getMetadata()
+        # if the input is a dataframe, then write the first row to a temporary
+        # sqlite file, and get the metadata from it
+        if pandas_df_input_flag:
+            input_df_head = incoming_connection_name.head(1)
+            temp_table_name = str(uuid1())
+            temp_file_path = '.'.join([temp_table_name, 'sqlite'])
+            with SqliteDb(
+                temp_file_path,
+                create_new=True,
+                temporary=True,
+                debug=self.debug
+            ) as db:
+                db.writeData(input_df_head, 'data')
+                raw_metadata = db.getMetadata()
+        # otherwise, if not a dataframe, assume input argument value is a
+        # connection name string (function called will validate string type)
+        else:
+            pandas_df_input_flag = False
+            # get the filepath of the data
+            input_data_filepath = self.__getIncomingConnectionFilepath(
+                incoming_connection_name
+                )
+            # get the data from the sqlite file
+            with SqliteDb(
+                input_data_filepath,
+                create_new=False,
+                debug=self.debug
+            ) as db:
+                raw_metadata = db.getMetadata()
         # initiate the a MetadataTools object
         metadata_tools = MetadataTools(debug=self.debug)
         metadata_dict = {}
         for index, field in raw_metadata.iterrows():
-            field_name = field['name']
+            if (pandas_df_input_flag):
+                if field['name'] == str(input_df_head.columns[index]):
+                    field_name = input_df_head.columns[index]
+                else:
+                    raise ReferenceError(' '.join([
+                        'error: pandas dataframe columns appear',
+                        'to be in a different order than the correspond',
+                        'sqlite data table for some reason...',
+                        '> pandas dataframe columns: {}'.format(input_df_head.columns),
+                        '> sqlite dataframe columns: {}'.format(list(raw_metadata['name']))
+                        ]))
+            else:
+                field_name = field['name']
             field_type_str = field['type']
             # parse out field type (str) and length (tuple) from string
             field_type_and_length_d = \
