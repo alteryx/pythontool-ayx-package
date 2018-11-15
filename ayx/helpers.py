@@ -22,7 +22,6 @@ def convertObjToStr(obj):
         obj_str = '<{}>'.format(type(obj))
     return obj_str
 
-
 # return a string containing a msg followed by a filepath
 def fileErrorMsg(msg, filepath=None):
     if filepath is None:
@@ -46,6 +45,10 @@ def fileExists(filepath, throw_error=None, msg=None, debug=None):
     if os.path.isfile(filepath):
         if debug:
             print(fileErrorMsg('File exists', filepath))
+        return True
+    elif os.path.isdir(filepath):
+        if debug:
+            print(fileErrorMsg('Directory exists', filepath))
         return True
     else:
         if throw_error:

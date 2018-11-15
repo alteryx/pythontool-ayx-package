@@ -1,7 +1,7 @@
-pandas
-IPython
 jupyter
-pywin32
+IPython
+pandas
+matplotlib
 nose
 pylint
 pyqt5

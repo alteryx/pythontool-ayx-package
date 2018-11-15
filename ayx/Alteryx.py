@@ -11,7 +11,21 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-from ayx.export import __version__, help, read, write, readMetadata, getIncomingConnectionNames, installPackage, installPackages, getWorkflowConstant
+from ayx.export import (
+    __version__,
+    help,
+    read,
+    write, 
+    # writePlot,
+    readMetadata,
+    getIncomingConnectionNames,
+    installPackage,
+    installPackages,
+    importPythonModule,
+    getWorkflowConstant,
+    getWorkflowConstants,
+    getWorkflowConstantNames
+    )
 
 ### the reason for this file is so that the imported modules in ayx.export
 ### are not left as module attributes for dir(module) or jupyter's intellisense

@@ -12,5 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from ayx.version import version
-
 __version__ = version
+
+__all__ = ['Alteryx', 'Package', 'Utils']

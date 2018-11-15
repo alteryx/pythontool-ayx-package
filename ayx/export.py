@@ -15,6 +15,7 @@ from ayx.CachedData import CachedData as __CachedData__
 from ayx.Help import Help as __Help__
 from ayx.Package import installPackages as __installPackages__
 from ayx.version import version as __version__
+from ayx.Utils import ExternalModuleLoader as __ExternalModuleLoader__
 
 
 def help(debug=None, **kwargs):
@@ -75,9 +76,16 @@ def readMetadata(incoming_connection_name, debug=None, **kwargs):
 
 def write(pandas_df, outgoing_connection_number, columns=None, debug=None, **kwargs):
     '''
-    When running the workflow in Alteryx, this function will convert a pandas data frame to an Alteryx data stream and pass it out through one of the tool's five output anchors. When called from the Jupyter notebook interactively, it will display a preview of the pandas dataframe.
+    When running the workflow in Alteryx, this function will convert a pandas data frame to an Alteryx data stream and pass it out through one of the tool's five output anchors. When called from the Jupyter notebook interactively, it will display a preview of the pandas dataframe. An optional 'columns' argument allows column metadata to specify the field type, length, and name of columns in the output data stream.
     '''
     return __CachedData__(debug=debug).write(pandas_df, outgoing_connection_number, columns=columns, **kwargs)
+
+def writePlot(matplotlib_pyplot, outgoing_connection_number, debug=None, **kwargs):
+    '''
+    When running the workflow in Alteryx, this function will convert a plot created with matplotlib to an Alteryx data stream and pass it out through one of the tool's five output anchors. When called from the Jupyter notebook interactively, it will display a preview of the plot.
+    '''
+    return __CachedData__(debug=debug).writePlot(matplotlib_pyplot, outgoing_connection_number, **kwargs)
+
 
 def getIncomingConnectionNames(debug=None, **kwargs):
     '''
@@ -90,6 +98,26 @@ def getWorkflowConstant(constant_name, debug=None, **kwargs):
     This function will return the Alteryx workflow constant as a string, int, or float, depending on the value and whether the "#" checkbox is checked for the constant in the Alteryx GUI. Like the read function, getting workflow constants in the Python tool depends on the workflow being run first so that the Python tool will have cached the data and constants and made them available in the Jupyter notebook.
     '''
     return __CachedData__(debug=debug).getWorkflowConstant(constant_name, **kwargs)
+
+def getWorkflowConstantNames(debug=None, **kwargs):
+    '''
+    This function will return a list of the Alteryx workflow constants. Like the read function, getting workflow constants in the Python tool depends on the workflow being run first so that the Python tool will have cached the data and constants and made them available in the Jupyter notebook.
+    '''
+    return __CachedData__(debug=debug).getWorkflowConstantNames(**kwargs)
+
+def getWorkflowConstants(debug=None, **kwargs):
+    '''
+    This function will return a dict of the Alteryx workflow constants and corresponding values. Like the read function, getting workflow constants in the Python tool depends on the workflow being run first so that the Python tool will have cached the data and constants and made them available in the Jupyter notebook.
+    '''
+    return __CachedData__(debug=debug).getWorkflowConstants(**kwargs)
+
+
+def importPythonModule(path, submodules=True, debug=None, **kwargs):
+    '''
+    This function will import a python script or directory module and returns it as a module.
+    '''
+    return __ExternalModuleLoader__(path=path, debug=debug).importPythonModule(if_pkg_load_submodules=submodules, **kwargs)
+
 
 def installPackage(package, install_type=None, debug=None, **kwargs):
     '''
