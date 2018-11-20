@@ -14,14 +14,14 @@
 
 ### NOTE! Keep this lightweight -- NO THIRD-PARTY PACKAGE REFERENCES!!!
 ### (eg, pandas, etc -- otherwise, it will be impossible to update packages
-###  loaded here!) 
+###  loaded here!)
 from sys import executable as python_exe
 import io, subprocess
 from ayx.Utils import runSubprocess
 # from ayx.packages import required as required_packages
 
 
-def packageIsInstalled(pkg, debug=False):
+def packageIsInstalled(pkg, debug=None):
     # check arg types
     if not isinstance(pkg, str):
         raise TypeError('package name must be a string')
@@ -35,10 +35,7 @@ def packageIsInstalled(pkg, debug=False):
     # run an external subprocess to check if we can import the package
     result = runSubprocess([python_exe, '-c', 'import {}'.format(pkg)])
     # if ModuleNotFoundError, then check what the module name is
-    if (
-        result['err_type'] is not None and
-        result['err_type'] == 'ModuleNotFoundError'
-    ):
+    if (result['err_type'] == 'ModuleNotFoundError'):
         # get the missing package name that triggered the exception
         error_package = result['msg'].split(' ')[-1][1:-1]
         # is the missing module that triggered the error the one being checked?
@@ -70,10 +67,7 @@ def installPackages(package, install_type=None, debug=None):
         if len(install_type) == 1 and install_type[0] == 'uninstall':
             install_type_list = ['uninstall', '-y']
         else:
-            install_type_list = list(map(
-                lambda x: '{}'.format(x).strip(),
-                install_type
-                ))
+            install_type_list = [str(x).strip() for x in install_type]
     # otherwise, attempt to concatenate params together
     # eg, ['install','--user'] --> 'install --user'
     else:
@@ -105,6 +99,11 @@ def installPackages(package, install_type=None, debug=None):
     # main(pip_args)
 
     ## attempt to install -- approach #2
+
+    if debug:
+        print('Executing subprocess: {}'.format(pip_args_str))
+
+
     pip_install_result = runSubprocess(
             [python_exe, "-m", "pip"] + pip_args_list,
             debug=debug
