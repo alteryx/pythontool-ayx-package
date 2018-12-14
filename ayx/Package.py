@@ -21,7 +21,7 @@ from ayx.Utils import runSubprocess
 # from ayx.packages import required as required_packages
 
 
-def packageIsInstalled(pkg, debug=None):
+def isPackageInstalled(pkg, debug=None):
     # check arg types
     if not isinstance(pkg, str):
         raise TypeError('package name must be a string')

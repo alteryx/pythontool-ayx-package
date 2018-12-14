@@ -14,7 +14,7 @@
 from unittest import TestCase
 from subprocess import CalledProcessError
 from ayx.tests.testdata.install_test_package_name import test_package
-from ayx.Package import installPackages, packageIsInstalled
+from ayx.Package import installPackages, isPackageInstalled
 
 
 class TestPackageStrOrList(TestCase):
@@ -59,18 +59,18 @@ class TestPackageUninstallReinstall(TestCase):
         except:
             pass
         # if the package is still available, throw an error
-        if packageIsInstalled(self.test_package):
+        if isPackageInstalled(self.test_package):
             self.fail('test requires {} to be uninstalled first'.format(self.test_package))
 
 
     def testInstallUninstall(self):
         # install test package
         installPackages(self.test_package)
-        install_success = packageIsInstalled(self.test_package)
+        install_success = isPackageInstalled(self.test_package)
         if not install_success:
             self.fail("install failed for package {}".format(self.test_package))
         # uninstall test package
         installPackages(self.test_package, ['uninstall', '-y'])
-        uninstall_success = not packageIsInstalled(self.test_package)
+        uninstall_success = not isPackageInstalled(self.test_package)
         if not uninstall_success:
             self.fail("uninstall failed. you should manually uninstall {}".format(self.test_package))

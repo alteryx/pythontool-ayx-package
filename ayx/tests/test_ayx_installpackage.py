@@ -14,7 +14,7 @@
 from unittest import TestCase
 from ayx.tests.testdata.install_test_package_name import test_package
 from ayx.Alteryx import installPackage, installPackages
-from ayx.Package import packageIsInstalled
+from ayx.Package import isPackageInstalled
 
 class TestAlteryxRead(TestCase):
 
@@ -33,7 +33,7 @@ class TestAlteryxRead(TestCase):
         except:
             self.fail('error installing {}'.format(self.test_package))
         # check if installed
-        if not packageIsInstalled(self.test_package):
+        if not isPackageInstalled(self.test_package):
             self.fail('package was not installed successfully: {}'.format(self.test_package))
         # attempt to uninstall test package
         try:
@@ -42,5 +42,5 @@ class TestAlteryxRead(TestCase):
             print(e)
             self.fail('error uninstalling {}'.format(self.test_package))
         # check if uninstalled
-        if packageIsInstalled(self.test_package):
+        if isPackageInstalled(self.test_package):
             self.fail('package was not uninstalled successfully: {}'.format(self.test_package))

@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from unittest import TestCase
-from ayx.Package import packageIsInstalled
+from ayx.Package import isPackageInstalled
 
 
 class TestInstalledPackageCheck(TestCase):
@@ -29,10 +29,10 @@ class TestInstalledPackageCheck(TestCase):
 
     def testInstalled(self):
         for pkg in self.installed_packages:
-            result = packageIsInstalled(pkg)
+            result = isPackageInstalled(pkg)
             self.assertTrue(result)
 
     def testNotInstalled(self):
         for pkg in self.not_installed_packages:
-            result = packageIsInstalled(pkg)
+            result = isPackageInstalled(pkg)
             self.assertFalse(result)
