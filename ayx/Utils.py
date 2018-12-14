@@ -22,7 +22,7 @@ from re import findall
 from functools import reduce
 
 
-def runSubprocess(args_list, debug=False):
+def runSubprocess(args_list, debug=None):
     if debug is None:
         debug = False
     elif not isinstance(debug, bool):

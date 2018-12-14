@@ -64,5 +64,11 @@ ECHO ==================================================================
 ECHO Files have been copied!
 ECHO Check the logs above for copy errors and hit continue to execute a quick cleanup.
 ECHO ==================================================================
+:: cleanup here
+pause
+ECHO ==================================================================
+ECHO ALSO, a short post-wheel-compilation to-do list (not yet automated):
+ECHO * remove version specification for pywin32 package in %dest%\requirements.txt
+ECHO ==================================================================
 @echo on
 pause
