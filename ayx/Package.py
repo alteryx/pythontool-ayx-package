@@ -11,25 +11,45 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import sys, io, subprocess
+
+### NOTE! Keep this lightweight -- NO THIRD-PARTY PACKAGE REFERENCES!!!
+### (eg, pandas, etc -- otherwise, it will be impossible to update packages
+###  loaded here!) 
+from sys import executable as python_exe
+import io, subprocess
+from ayx.Utils import runSubprocess
 # from ayx.packages import required as required_packages
 
 
-def packageIsInstalled(pkg):
+def packageIsInstalled(pkg, debug=False):
+    # check arg types
     if not isinstance(pkg, str):
         raise TypeError('package name must be a string')
-    try:
-        # if we can import the package, then good to go
-        __import__(pkg)
-        return True
-    except ModuleNotFoundError as e:
+    if debug is None:
+        debug = False
+    elif not isinstance(debug, bool):
+        raise TypeError('debug must be True or False')
+    # TODO: in progress -- check if package is installed (ideally without loading it)
+    # "python -c 'import pkgutil; print(1 if pkgutil.find_loader(\"${pkg}\") else 0)'"
+    # result = runSubprocess([python_exe, '-c', 'import {}'.format(pkg)])
+    # run an external subprocess to check if we can import the package
+    result = runSubprocess([python_exe, '-c', 'import {}'.format(pkg)])
+    # if ModuleNotFoundError, then check what the module name is
+    if (
+        result['err_type'] is not None and
+        result['err_type'] == 'ModuleNotFoundError'
+    ):
         # get the missing package name that triggered the exception
-        error_package = e.msg.split(' ')[-1][1:-1]
+        error_package = result['msg'].split(' ')[-1][1:-1]
         # is the missing module that triggered the error the one being checked?
         # example: when executing __import__('keras') ==> "No module named 'tensorflow'"
         # because tensorflow is an optional dependency that doesn't get installed with
         # keras (user is required to install tensorflow or change setting to not use tensorflow)
         return error_package != pkg
+    # if not moduleNotFoundError, then return whether subprocess was success or not
+    return result['success']
+
+
 
 
 def installPackages(package, install_type=None, debug=None):
@@ -40,35 +60,42 @@ def installPackages(package, install_type=None, debug=None):
 
     # default install_type is install
     if install_type is None:
-        install_type = 'install'
+        install_type_list = ['install']
     elif isinstance(install_type, str):
         if install_type == 'uninstall':
-            install_type = 'uninstall -y'
+            install_type_list = ['uninstall', '-y']
+        else:
+            install_type_list = install_type.split(' ')
+    elif isinstance(install_type, list):
+        if len(install_type) == 1 and install_type[0] == 'uninstall':
+            install_type_list = ['uninstall', '-y']
+        else:
+            install_type_list = list(map(
+                lambda x: '{}'.format(x).strip(),
+                install_type
+                ))
     # otherwise, attempt to concatenate params together
     # eg, ['install','--user'] --> 'install --user'
     else:
-        try:
-            install_type = ' '.join(install_type)
-        except:
-            raise TypeError('install_type must be a string or list of strings')
+        raise TypeError('install_type must be a string or list of strings')
 
     # similarly, if package list is a string, then good to go
     # but if it is a list of string, concatenate together
     package_argtype_error_msg = 'Package name argument must be a string or list of strings.'
     if isinstance(package, str):
-        pkg_list = package
+        pkg_list = package.split(' ')
     elif isinstance(package, list):
-        try:
-            pkg_list = ' '.join(package)
-        except TypeError:
-            raise TypeError(package_argtype_error_msg)
+        for pkg in package:
+            if not isinstance(pkg, str):
+                raise TypeError(package_argtype_error_msg)
+        pkg_list = package
     else:
         raise TypeError(package_argtype_error_msg)
 
 
     # put all pip args into a list
-    pip_args_str = '{} {}'.format(install_type, pkg_list)
-    pip_args_list = pip_args_str.split(' ')
+    pip_args_list = install_type_list + pkg_list
+    pip_args_str = ' '.join(pip_args_list)
 
     ## attempt to install -- approach #1 (not thread safe)
     # try:
@@ -78,18 +105,11 @@ def installPackages(package, install_type=None, debug=None):
     # main(pip_args)
 
     ## attempt to install -- approach #2
-    try:
-        print('Installing... \n(this may take a minute depending on the package size, dependencies, and other factors)')
-        if debug:
-            print(' '.join(['python -m pip'] + pip_args_list))
-        # run "pip install <package>"
-        result = subprocess.check_output(
-            [sys.executable, "-m", "pip"] + pip_args_list,
-            stderr = subprocess.STDOUT
+    pip_install_result = runSubprocess(
+            [python_exe, "-m", "pip"] + pip_args_list,
+            debug=debug
             )
-        # print the output
-        print(result.decode("utf-8"))
-    # if any errors, print them to output
-    except subprocess.CalledProcessError as e:
-        print(e.output.decode("utf-8"))
-        raise
+
+    print(pip_install_result['msg'])
+    if not pip_install_result['success']:
+        raise pip_install_result['err']

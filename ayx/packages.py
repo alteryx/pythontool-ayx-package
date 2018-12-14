@@ -13,15 +13,15 @@
 # under the License.
 
 required = [
+    'IPython',
     'pandas',
-    'IPython'
+    'matplotlib'
     ]
 
 supplemental = [
     'jupyter',
     'SQLAlchemy',
     'pywin32',
-    'matplotlib',
     'numpy',
     'requests',
     'scikit-learn',

@@ -98,6 +98,20 @@ datafiles = {
         'tables':[],
         'notes':'only Constants, no inputs connected yet'
     },
+    'test_python_script':{
+        'filename':'test_script.py',
+        'type':'python',
+        'valid_file':True,
+        'tables':[],
+        'notes':'test python script file wth function myfunction()'
+    },
+    'test_python_package':{
+        'filename':'mypkg',
+        'type':'directory',
+        'valid_file':True,
+        'tables':[],
+        'notes':'python package directory'
+    },
 }
 
 def getValidSqliteFiles():
