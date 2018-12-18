@@ -12,14 +12,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from unittest import TestCase
-from ayx.CachedData import SqliteDb
+from ayx.Datafiles import Datafile
 from ayx.tests.testdata.datafiles import getTestFileName, getTestFileTables
 
 class TestGetSingularTableSuccess(TestCase):
 
     def setUp(self):
         self.onetable_db_filepath = getTestFileName('single_simple_table')
-        self.onetable_db = SqliteDb(self.onetable_db_filepath, debug=True)
+        self.onetable_db = Datafile(self.onetable_db_filepath, debug=True)
         self.tables = getTestFileTables('single_simple_table')
         if len(self.tables) != 1:
             raise Exception('Bad test db setup -- should only contain 1 table')
@@ -35,7 +35,7 @@ class TestGetSingularTableZeroTables(TestCase):
 
     def setUp(self):
         self.zerotable_db_filepath = getTestFileName('zero_tables')
-        self.zerotable_db = SqliteDb(self.zerotable_db_filepath, debug=True)
+        self.zerotable_db = Datafile(self.zerotable_db_filepath, debug=True)
         self.tables = getTestFileTables('zero_tables')
         if len(self.tables) != 0:
             raise Exception('Bad test db setup -- should contain 0 tables')
@@ -48,7 +48,7 @@ class TestGetSingularTableMultipleTables(TestCase):
 
     def setUp(self):
         self.multitable_db_filepath = getTestFileName('four_tables_cnx_metadata')
-        self.multitable_db = SqliteDb(self.multitable_db_filepath, debug=True)
+        self.multitable_db = Datafile(self.multitable_db_filepath, debug=True)
         self.tables = getTestFileTables('four_tables_cnx_metadata')
         if len(self.tables) <= 1:
             raise Exception('Bad test db setup -- should contain >1 tables')

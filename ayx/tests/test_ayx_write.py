@@ -16,7 +16,7 @@ import sqlite3
 import pandas
 from unittest import TestCase
 from ayx.Alteryx import read, write
-from ayx.CachedData import SqliteDb
+from ayx.Datafiles import Datafile
 from ayx.helpers import deleteFile, fileExists
 
 def outputFilename(connection_num):
@@ -66,7 +66,7 @@ class TestAlteryxWriteContents(TestCase):
 
     def testAyxWriteDataRowCount(self):
         write(self.data, self.connection)
-        with SqliteDb(self.filename, create_new=False) as result_db:
+        with Datafile(self.filename, create_new=False) as result_db:
             rows = pandas.read_sql_query(
                 "select count(*) as count from data",
                 result_db.connection
@@ -76,7 +76,7 @@ class TestAlteryxWriteContents(TestCase):
     def testAyxWriteDataContents(self):
         write(self.data, self.connection)
         expected = self.data
-        with SqliteDb(self.filename, create_new=False) as result_db:
+        with Datafile(self.filename, create_new=False) as result_db:
             actual = result_db.getData()
         print(expected.head())
         print(actual.head())

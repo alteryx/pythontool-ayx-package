@@ -13,14 +13,14 @@
 # under the License.
 import os
 from unittest import TestCase
-from ayx.CachedData import SqliteDb
+from ayx.Datafiles import Datafile
 from ayx.tests.testdata.datafiles import getTestFileName
 
 
 class TestSqliteInit(TestCase):
     def setUp(self):
         self.existing_db_filepath = getTestFileName('single_simple_table')
-        self.existing_db = SqliteDb(self.existing_db_filepath)
+        self.existing_db = Datafile(self.existing_db_filepath)
 
     def testFilepathString(self):
         self.assertTrue(

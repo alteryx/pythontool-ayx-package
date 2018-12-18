@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from unittest import TestCase
-from ayx.CachedData import SqliteDb
+from ayx.Datafiles import Datafile
 from ayx.tests.testdata.datafiles import getValidSqliteFiles, getTestFileName, getTestFileTables
 
 
@@ -25,7 +25,7 @@ class TestSqliteGetTableNames(TestCase):
     def testGetTableNames(self):
         for datafile in self.datafiles:
             # create temp db connection
-            db = SqliteDb(getTestFileName(datafile))
+            db = Datafile(getTestFileName(datafile))
             db.openConnection()
             # generate expected/actual results
             expected = getTestFileTables(datafile)

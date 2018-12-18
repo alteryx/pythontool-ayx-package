@@ -14,7 +14,7 @@
 
 
 
-import sys, json, subprocess
+import sys, json
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -115,12 +115,12 @@ def savePlotToFile(matplotlib_figure, filepath):
 
 class MetadataTools:
     def __init__(self, debug=None):
-        # initialize the different columns in each context (ayx, sqlite)
+        # initialize the different columns in each context (yxdb, sqlite)
         self.columns = \
             {
                 'context': {
-                    'ayx': self.__ayxFieldTypeAttributes(),
-                    'sqlite': self.__sqliteFieldTypeAttributes()
+                    'yxdb': self.__yxdbFieldTypeAttributes(),
+                    'sqlite': self.__sqliteFieldTypeAttributes(),
                     }
                 }
         if debug is None:
@@ -131,7 +131,7 @@ class MetadataTools:
             raise TypeError('debug value must be True or False')
 
 
-    def __ayxFieldTypeAttributes(self):
+    def __yxdbFieldTypeAttributes(self):
         return {
             'SpatialObj': {
                 'conversion_types': {'sqlite': ['AlteryxSpatialObjectBlob']},
@@ -223,102 +223,102 @@ class MetadataTools:
     def __sqliteFieldTypeAttributes(self):
         return {
             'AlteryxSpatialObjectBlob': {
-                'conversion_types': {'ayx': ['SpatialObj']},
+                'conversion_types': {'yxdb': ['SpatialObj']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'Blob': {
-                'conversion_types': {'ayx': ['Blob']},
+                'conversion_types': {'yxdb': ['Blob']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'CHAR': {
-                'conversion_types': {'ayx': ['String']},
+                'conversion_types': {'yxdb': ['String']},
                 'expected_length_dim': 1,
                 'default_length': (2147483647,)
                 },
             'varchar': {
-                'conversion_types': {'ayx': ['V_String']},
+                'conversion_types': {'yxdb': ['V_String']},
                 'expected_length_dim': 1,
                 'default_length': (2147483647,)
                 },
             'nchar': {
-                'conversion_types': {'ayx': ['WString']},
+                'conversion_types': {'yxdb': ['WString']},
                 'expected_length_dim': 1,
                 'default_length': (2147483647,)
                 },
             'nvarchar': {
-                'conversion_types': {'ayx': ['V_WString']},
+                'conversion_types': {'yxdb': ['V_WString']},
                 'expected_length_dim': 1,
                 'default_length': (2147483647,)
                 },
             'TEXT': {
-                'conversion_types': {'ayx': ['V_WString']},
+                'conversion_types': {'yxdb': ['V_WString']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'boolean': {
-                'conversion_types': {'ayx': ['Boolean']},
+                'conversion_types': {'yxdb': ['Boolean']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'tinyint unsigned': {
-                'conversion_types': {'ayx': ['Byte']},
+                'conversion_types': {'yxdb': ['Byte']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'smallint': {
-                'conversion_types': {'ayx': ['Int16']},
+                'conversion_types': {'yxdb': ['Int16']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'int': {
-                'conversion_types': {'ayx': ['Int32']},
+                'conversion_types': {'yxdb': ['Int32']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'bigint': {
-                'conversion_types': {'ayx': ['Int64']},
+                'conversion_types': {'yxdb': ['Int64']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'INTEGER': {
-                'conversion_types': {'ayx': ['Int64']},
+                'conversion_types': {'yxdb': ['Int64']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'float': {
-                'conversion_types': {'ayx': ['Float']},
+                'conversion_types': {'yxdb': ['Float']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'double': {
-                'conversion_types': {'ayx': ['Double']},
+                'conversion_types': {'yxdb': ['Double']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'REAL': {
-                'conversion_types': {'ayx': ['Double']},
+                'conversion_types': {'yxdb': ['Double']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'decimal': {
-                'conversion_types': {'ayx': ['Fixed Decimal']},
+                'conversion_types': {'yxdb': ['Fixed Decimal']},
                 'expected_length_dim': 2,
                 'default_length': (19, 6)
                 },
             'date': {
-                'conversion_types': {'ayx': ['Date']},
+                'conversion_types': {'yxdb': ['Date']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'time': {
-                'conversion_types': {'ayx': ['Time']},
+                'conversion_types': {'yxdb': ['Time']},
                 'expected_length_dim': 0,
                 'default_length': None
                 },
             'datetime': {
-                'conversion_types': {'ayx': ['DateTime']},
+                'conversion_types': {'yxdb': ['DateTime']},
                 'expected_length_dim': 0,
                 'default_length': None
                 }
@@ -395,12 +395,12 @@ class MetadataTools:
         # elif length_dim == 1:
         #     if context_dict['sqlite']:
         #         return '({})'.format(length_tuple[0])
-        #     if context_dict['ayx']:
+        #     if context_dict['yxdb']:
         #         return '{}'.format(length_tuple[0])
         # elif length_dim == 2:
         #     if context_dict['sqlite']:
         #         return '({}, {})'.format(length_tuple[0], length_tuple[1])
-        #     if context_dict['ayx']:
+        #     if context_dict['yxdb']:
         #         return '{}.{}'.format(length_tuple[0], length_tuple[1])
         # # if we got this far, something went wrong...
         # raise ValueError(' '.join([
@@ -416,7 +416,7 @@ class MetadataTools:
                 new_length = '({})'.format(length_tuple[0])
             elif length_dim == 2:
                 new_length = '({}, {})'.format(length_tuple[0], length_tuple[1])
-        if context_dict['ayx']:
+        if context_dict['yxdb']:
             if length_dim == 0:
                 new_length = None
             elif length_dim == 1:
@@ -442,7 +442,7 @@ class MetadataTools:
             raise TypeError('Invalid to context (must be string): {}'\
                     .format(convertObjToStr(to_context)))
 
-        # if valid context provided, convert to dict -- ex/ {'ayx': True, 'sqlite': False}
+        # if valid context provided, convert to dict -- ex/ {'yxdb': True, 'sqlite': False}
         context_dict = self.__contextDict(from_context)
         # # parse type and length
         field_type_and_length_d = self.parseFieldTypeAndLengthStr(
@@ -657,7 +657,7 @@ class MetadataTools:
         valid = False
         reasons = []
         # check whether field length is appropriate for field type (in the relevant context(s))
-        for context in self.columns['context']: # eg, ayx or sqlite
+        for context in self.columns['context']: # eg, yxdb or sqlite
             if (
                 (context_dict[context]) and
                 (field_type_str in self.columns['context'][context])
@@ -728,7 +728,7 @@ class MetadataTools:
                 print(err)
             return False
 
-    # check if field type string is valid, depending on context (ayx or sqlite)
+    # check if field type string is valid, depending on context (yxdb or sqlite)
     def __isValidFieldTypeStr(self, field_type_str, context=None, error_if_invalid=False):
         # check if input is tuple
         if not isinstance(field_type_str, str):
@@ -767,7 +767,7 @@ class MetadataTools:
                 ]).format(
                     type(field_type_str),
                     field_type_str,
-                    list(self.columns['context']['ayx']),
+                    list(self.columns['context']['yxdb']),
                     list(self.columns['context']['sqlite'])
                     )
                 )
@@ -778,26 +778,26 @@ class MetadataTools:
     # borderline pointless function to put context in dict
     def __contextDict(self, context):
         # valid context values
-        ayx_context_string = 'ayx'
+        yxdb_context_string = 'yxdb'
         sqlite_context_string = 'sqlite'
         # intialize context_dict
         context_dict = {}
         # check conditions -- if None, then allow both
         if context is None:
-            # context_dict = {'ayx': True, 'sqlite': True}
+            # context_dict = {'yxdb': True, 'sqlite': True}
             raise ValueError('Context value must be specified')
         elif isinstance(context, str):
-            if context == ayx_context_string:
-                context_dict = {ayx_context_string: True, sqlite_context_string: False}
+            if context == yxdb_context_string:
+                context_dict = {yxdb_context_string: True, sqlite_context_string: False}
             elif context == sqlite_context_string:
-                context_dict = {ayx_context_string: False, sqlite_context_string: True}
+                context_dict = {yxdb_context_string: False, sqlite_context_string: True}
         else:
             raise TypeError('Context must be a string.')
 
-        # if both context strings ('ayx' and 'sqlite') are not keys in
+        # if both context strings ('yxdb' and 'sqlite') are not keys in
         # context_dict, then throw an error.
         if not(
-            (ayx_context_string in context_dict) and
+            (yxdb_context_string in context_dict) and
             (sqlite_context_string in context_dict)
             ):
             # attempt to put the input context argument into a string
@@ -808,7 +808,7 @@ class MetadataTools:
             # throw the error
             raise ValueError(
                 'Invalid context ({}) -- must be either "{}" or "{}" (or None for both)'\
-                    .format(context_str, ayx_context_string, sqlite_context_string)
+                    .format(context_str, yxdb_context_string, sqlite_context_string)
                 )
         return context_dict
 

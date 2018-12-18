@@ -13,259 +13,11 @@
 # under the License.
 
 
-import os
-# import sqlalchemy
-import sqlite3
 from uuid import uuid1
-from types import ModuleType as module
 import pandas as pd
 from matplotlib.figure import Figure
-from ayx.helpers import fileErrorMsg, fileExists, deleteFile, tableNameIsValid, convertObjToStr, isDictMappingStrToStr, convertToType
 from ayx.DatastreamUtils import MetadataTools, Config, savePlotToFile
-
-
-class SqliteDb:
-    def __init__(self, db_path=None, create_new=False, temporary=False, debug=None):
-
-        # if no db_path specified, throw error
-        if db_path is None:
-            raise ReferenceError("No database specified to open")
-
-        # default for create_new is false (throw error if file doesnt exist)+++
-        if create_new is None:
-            self.create_new = False
-        elif isinstance(create_new, bool):
-            self.create_new = create_new
-        else:
-            raise TypeError("create_new parameter must be boolean")
-
-        # default for temporary is false (throw error if file doesnt exist)+++
-        if temporary is None:
-            self.temporary = False
-        elif isinstance(temporary, bool):
-            self.temporary = temporary
-        else:
-            raise TypeError("temporary parameter must be boolean")
-
-
-
-        # check debug parameter
-        if debug is None:
-            self.debug = False
-        elif isinstance(debug, bool):
-            self.debug = debug
-        else:
-            raise TypeError('debug parameter must True or False')
-
-        # set object attributes
-        self.filepath = os.path.abspath(db_path)
-        self.connection = None
-
-    def __enter__(self):
-        self.openConnection()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.closeConnection()
-        # if temporary file, attempt to clean up on exit
-        if self.temporary:
-            try:
-                deleteFile(self.filepath, debug=self.debug)
-            except:
-                # (this is not the end of the world)
-                if self.debug:
-                    print(''.join([
-                        'Unable to delete temp file (will be cleanded up later',
-                        'by asset manager) -- {}'.format(self.filepath)
-                        ]))
-
-    # open the connection
-    def openConnection(self):
-        if not self.__isConnectionOpen():
-            if self.debug:
-                print('Attempting to open connection to {}'.format(self.filepath))
-            try:
-                self.connection = self.__returnConnection()
-            except FileNotFoundError as e:
-                print(e)
-                raise ReferenceError("You must run the workflow first in order to make a cached copy of the incoming data available for development purposes within this Jupyter notebook.")
-        # print connection status
-        if self.debug:
-            print('Connection is open: {}'.format(
-                self.__isConnectionOpen(error_if_closed=False)
-                ))
-
-    def __isConnectionOpen(self, error_if_closed=None):
-        if self.debug:
-            print('Connection status: {}'.format(self.connection))
-        if error_if_closed is None:
-            error_if_closed = False
-        # if hasattr(self, 'connection') and isinstance(self.connection, sqlalchemy.engine.base.Connection):
-        if hasattr(self, 'connection') and isinstance(self.connection, sqlite3.Connection):
-            return True
-        else:
-            if error_if_closed:
-                raise AttributeError(fileErrorMsg('sqlite connection is closed', self.filepath))
-            return False
-
-    # open database connection, verify that we can execute sql statements
-    def __returnConnection(self):
-        error_msg = 'Unable to connect to input data'
-        # if file exists, and not creating a new db, then throw error
-        if (
-                fileExists(self.filepath, throw_error=not(self.create_new), msg=error_msg) or
-                (self.create_new)
-            ):
-            # open connection and attempt to run a quick arbitrary query
-            # to confirm that it is a valid sqlite db
-            try:
-                connection = sqlite3.connect(self.filepath)
-                # connection = sqlalchemy.create_engine('sqlite:///{}'.format(self.filepath)).connect()
-                connection.execute("select * from sqlite_master limit 1")
-                return connection
-            except:
-                try:
-                    connection.close()
-                except:
-                    pass
-                raise ConnectionError(fileErrorMsg(error_msg, self.filepath))
-
-
-    # return table names in a list
-    def getTableNames(self):
-        if self.debug:
-            print('Attempting to get table names from {}'.format(self.filepath))
-
-        self.__isConnectionOpen(error_if_closed=True)
-
-        return pd.read_sql_query(
-            "select name from sqlite_master where type='table'",
-            self.connection
-            )['name'].tolist()
-
-
-    # close database connection
-    def closeConnection(self):
-        if self.debug:
-            print('Attempting to close connection to {}'.format(self.filepath))
-        if hasattr(self, 'connection'):
-            self.connection.close()
-            self.connection = None
-
-    # if one table exists, return its name, otherwise throw error
-    def getSingularTable(self):
-        if self.debug:
-            print('Attempting to find the name of the table in the db (assuming only one table exists)')
-        tables = self.getTableNames()
-        table_count = len(tables)
-        # if no tables exist throw error
-        if table_count == 0:
-            raise ValueError(fileErrorMsg(
-                'Db does not contain any tables',
-                self.filepath
-                ))
-        # if multiple tables exist, throw error
-        elif table_count > 1:
-            raise ValueError(fileErrorMsg(
-                'Db should only contain 1 table, but instead has multiple: {}'.format(tables),
-                self.filepath
-                ))
-        # return table name only if only one table exists
-        elif table_count == 1:
-            table = tables[0]
-            if self.debug:
-                print('One table was found in db -- the table name is: {}'.format(table))
-            return table
-
-    def getMetadata(self, table=None):
-        if self.debug:
-            print('Attempting to get metadata from table "{}"'.format(table))
-
-        self.__isConnectionOpen(error_if_closed=True)
-
-        # if no table specified, check to see if there is only table and use that
-        if table is None:
-            table = self.getSingularTable()
-
-        table_valid = tableNameIsValid(table)
-        if table_valid[0]:
-            try:
-                query_result = pd.read_sql_query(
-                    'pragma table_info({})'.format(table),
-                    self.connection,
-                    )
-                if self.debug:
-                    print(fileErrorMsg(
-                        'Success reading metadata from table "{}" '.format(table),
-                        self.filepath))
-                return query_result
-            except:
-                print(fileErrorMsg(
-                    'Error: unable to read metadata for table "{}"'.format(table),
-                    self.filepath))
-                raise
-        else:
-            raise NameError(''.join([
-                'Invalid table name ({})'.format(table),
-                'Reason: ',
-                table_valid[1]
-                ]))
-
-
-    def getData(self, table=None):
-        if self.debug:
-            print('Attempting to get data from table "{}"'.format(table))
-
-        self.__isConnectionOpen(error_if_closed=True)
-
-        # if no table specified, check to see if there is only table and use that
-        if table is None:
-            table = self.getSingularTable()
-
-        # now that the table name has been retrieved, get the data as pandas df
-        # (but first check that table name is valid to avoid sql injection)
-        table_valid = tableNameIsValid(table)
-        if table_valid[0]:
-            try:
-                query_result = pd.read_sql_query(
-                    'select * from {}'.format(table),
-                    self.connection,
-                    )
-                if self.debug:
-                    print(fileErrorMsg(
-                        'Success reading input table "{}" '.format(table),
-                        self.filepath))
-                return query_result
-            except:
-                print(fileErrorMsg(
-                    'Error: unable to read input table "{}"'.format(table),
-                    self.filepath))
-                raise
-
-        else:
-            raise NameError(''.join([
-                'Invalid table name ({})'.format(table),
-                'Reason: ',
-                table_valid[1]
-                ]))
-
-
-    def writeData(self, pandas_df, table, dtype=None):
-        if self.debug:
-            print('Attempting to write data to table "{}"'.format(table))
-        try:
-            pandas_df.to_sql(table, self.connection, if_exists='replace', index=False, dtype=dtype)
-            if self.debug:
-                print(fileErrorMsg(
-                    'Success writing output table "{}"'.format(table),
-                    self.filepath))
-            return pandas_df
-        except:
-            print(fileErrorMsg(
-                'Error: unable to write output table "{}"'.format(table),
-                self.filepath))
-            raise
-
+from ayx.Datafiles import Datafile
 
 
 
@@ -403,8 +155,10 @@ class CachedData:
         input_data_filepath = self.__getIncomingConnectionFilepath(
             incoming_connection_name
             )
-        # create custom sqlite object
-        with SqliteDb(input_data_filepath, debug=self.debug) as db:
+        # create datafile object
+        # (by not specifying the fileformat paramter, it will assume the file
+        # type from the file's extension)
+        with Datafile(input_data_filepath, debug=self.debug) as db:
             msg_action = 'reading input data "{}"'.format(
                 incoming_connection_name
                 )
@@ -539,7 +293,7 @@ class CachedData:
                 if new_type_length is not None:
                     db_col_metadata = metadata_tools.convertTypeString(
                         new_type_length,
-                        from_context='ayx',
+                        from_context='yxdb',
                         to_context='sqlite'
                         )
                     db_col_type_only = db_col_metadata['type']
@@ -579,7 +333,8 @@ class CachedData:
 
 
         # create custom sqlite object
-        with SqliteDb(
+        # (TODO: update to yxdb)
+        with Datafile(
             'output_{}.sqlite'.format(outgoing_connection_number),
             create_new=True,
             debug=self.debug
@@ -621,7 +376,7 @@ class CachedData:
             input_df_head = incoming_connection_name.head(1)
             temp_table_name = str(uuid1())
             temp_file_path = '.'.join([temp_table_name, 'sqlite'])
-            with SqliteDb(
+            with Datafile(
                 temp_file_path,
                 create_new=True,
                 temporary=True,
@@ -638,7 +393,7 @@ class CachedData:
                 incoming_connection_name
                 )
             # get the data from the sqlite file
-            with SqliteDb(
+            with Datafile(
                 input_data_filepath,
                 create_new=False,
                 debug=self.debug
@@ -674,7 +429,7 @@ class CachedData:
             conversion = metadata_tools.convertTypeString(
                 '{} {}'.format(field_type, field_length),
                 from_context='sqlite',
-                to_context='ayx'
+                to_context='yxdb'
                 )
             metadata_dict[field_name] = {
                 'type': conversion['type'],
@@ -684,12 +439,12 @@ class CachedData:
                     metadata_tools.supplementWithDefaultLengths(
                         metadata_dict[field_name]['type'],
                         metadata_dict[field_name]['length'],
-                        context='ayx'
+                        context='yxdb'
                         )
             updated_field_metadata['length'] = \
                     metadata_tools.convertLengthTupleToContext(
                         updated_field_metadata['length'],
-                        context='ayx'
+                        context='yxdb'
                         )
             metadata_dict[field_name] = updated_field_metadata
             metadata_dict[field_name]

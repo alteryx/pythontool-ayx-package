@@ -21,7 +21,7 @@ class TestCachedDataMetadataMethods(TestCase):
 
     def setUp(self):
         self.metadata_tools = MetadataTools()
-        self.expected_contexts = ['ayx','sqlite']
+        self.expected_contexts = ['yxdb','sqlite']
 
     def testContextValues(self):
         expected = self.expected_contexts
@@ -73,7 +73,7 @@ class TestCachedDataMetadataMethods(TestCase):
     def testPartialFieldConversionMap(self):
         fake_ayx_field_type = 'AYXtestType'
         fake_sqlite_field_type = 'SQLiteTestType'
-        self.metadata_tools.columns['context']['ayx'][fake_ayx_field_type] = {
+        self.metadata_tools.columns['context']['yxdb'][fake_ayx_field_type] = {
             'conversion_types': {
                 'sqlite': [fake_sqlite_field_type]
                 },
@@ -92,7 +92,7 @@ class TestCachedDataMetadataMethods(TestCase):
     def testCompleteFieldConversionMap(self):
         fake_ayx_field_type = 'AYXtestType'
         fake_sqlite_field_type = 'SQLiteTestType'
-        self.metadata_tools.columns['context']['ayx'][fake_ayx_field_type] = {
+        self.metadata_tools.columns['context']['yxdb'][fake_ayx_field_type] = {
             'conversion_types': {
                 'sqlite': [fake_sqlite_field_type]
                 },
@@ -101,7 +101,7 @@ class TestCachedDataMetadataMethods(TestCase):
             }
         self.metadata_tools.columns['context']['sqlite'][fake_sqlite_field_type] = {
             'conversion_types': {
-                'ayx': [fake_ayx_field_type]
+                'yxdb': [fake_ayx_field_type]
                 },
             'expected_length_dim': 1,
             'default_length': (2147483647,)
@@ -117,7 +117,7 @@ class TestCachedDataMetadataMethods(TestCase):
 
     # def testNewField(self):
     #     test_field_name = 'new_field'
-    #     self.metadata_tools.columns['context']['ayx'][test_field_name] = {
+    #     self.metadata_tools.columns['context']['yxdb'][test_field_name] = {
     #         'conversion_types': {
     #             'type': 'V_WString',
     #             'length': '1000'
