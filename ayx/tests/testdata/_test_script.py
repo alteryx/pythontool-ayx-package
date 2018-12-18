@@ -1,5 +1,5 @@
 # test import of relative package
-#import mypkg
+import mypkg
 
 def myfunction():
     print('test script worked')

@@ -84,14 +84,33 @@ def runSubprocess(args_list, debug=None):
 
 from pathlib import Path
 from importlib import import_module
-from importlib.machinery import SourceFileLoader
-from importlib.util import spec_from_loader, module_from_spec
+from importlib.util import spec_from_file_location, module_from_spec
+from contextlib import contextmanager
 from pkgutil import walk_packages
 from hashlib import blake2b
 import os.path
 import sys
 
 
+# temporarily add a directory to sys.path, do stuff, and then revert back sys.path
+# this is called with:
+#
+#        with add_to_path('/d/my_dir'):
+#            do_stuff()
+#
+@contextmanager
+def add_to_path(p):
+    import sys
+    old_path = sys.path
+    sys.path = sys.path[:]
+    sys.path.insert(0, p)
+    try:
+        yield
+    finally:
+        sys.path = old_path
+
+# this is the class used for the Alteryx.importPythonModule() function
+# (which allows users to import a local package dir or script file)
 class ExternalModuleLoader(object):
     def __init__(self, path=None, debug=None):
         # argument type checks
@@ -200,6 +219,7 @@ class ExternalModuleLoader(object):
 
         module_name_components = self.moduleNameComponents(path)
         fullpath = module_name_components['fullpath']
+        directory = module_name_components['directory']
         module_name = module_name_components['module_name']
         extension = module_name_components['extension']
         path_hash = module_name_components['path_hash']
@@ -216,13 +236,19 @@ class ExternalModuleLoader(object):
 
         module_name_w_path_hash = '{}_{}'.format(module_name, path_hash)
 
-        # output_module = import_module(self.module)
-        loader = SourceFileLoader(module_name_w_path_hash, fullpath)
-        spec = spec_from_loader(loader.name, loader)
-        output_module = module_from_spec(spec)
-        loader.exec_module(output_module)
-
-        return output_module
+        # how to import a script dynamically (from the python docs):
+        # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+        #
+        # a problem we run into: import statements in the script for modules that
+        # live in same dir will return a ModuleNotFoundError when the script
+        # is run through exec_module :( Here's a great thread about it:
+        # https://stackoverflow.com/questions/41861427/python-3-5-how-to-dynamically-import-a-module-given-the-full-file-path-in-the
+        #
+        with add_to_path(directory):
+            spec = spec_from_file_location(module_name_w_path_hash, fullpath)
+            output_module = module_from_spec(spec)
+            spec.loader.exec_module(output_module)
+            return output_module
 
 
 

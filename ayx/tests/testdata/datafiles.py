@@ -99,7 +99,7 @@ datafiles = {
         'notes':'only Constants, no inputs connected yet'
     },
     'test_python_script':{
-        'filename':'test_script.py',
+        'filename':'_test_script.py',
         'type':'python',
         'valid_file':True,
         'tables':[],
