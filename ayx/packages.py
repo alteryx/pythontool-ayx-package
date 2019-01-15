@@ -12,22 +12,17 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-required = [
-    'IPython',
-    'pandas',
-    'matplotlib'
-    ]
+required = ["IPython", "pandas", "matplotlib"]
 
 supplemental = [
-    'jupyter',
-    'SQLAlchemy',
-    'pywin32',
-    'numpy',
-    'requests',
-    'scikit-learn',
-    'scipy',
-    'six',
-    'statsmodels'
+    "jupyter",
+    "SQLAlchemy",
+    "numpy",
+    "requests",
+    "scikit-learn",
+    "scipy",
+    "six",
+    "statsmodels",
 ]
 
 all_packages = required + supplemental
