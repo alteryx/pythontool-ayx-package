@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from unittest import TestCase
-from ayx.CachedData import tableNameIsValid
+from ayx.helpers import tableNameIsValid
 
 
 class TestSqliteConnectionOpen(TestCase):

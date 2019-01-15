@@ -14,3 +14,10 @@
 from ayx.tests.testdata.set_wd import set_wd
 
 set_wd()
+
+
+import sys, os
+
+dll_path = "S:\\Alteryx\\bin_x64\\Debug"
+sys.path.insert(0, dll_path)
+os.environ["path"] += dll_path

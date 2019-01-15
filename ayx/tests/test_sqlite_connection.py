@@ -15,7 +15,7 @@ import os
 # from sqlalchemy.engine.base import Connection as DbConnection
 from sqlite3 import Connection as DbConnection
 from unittest import TestCase
-from ayx.CachedData import SqliteDb
+from ayx.Datafiles import Datafile
 from ayx.tests.testdata.datafiles import getTestFileName
 
 
@@ -23,7 +23,7 @@ class TestSqliteConnectionOpen(TestCase):
 
     def setUp(self):
         self.existing_db_filepath = getTestFileName('single_simple_table')
-        self.existing_db = SqliteDb(self.existing_db_filepath, debug=True)
+        self.existing_db = Datafile(self.existing_db_filepath, debug=True)
         self.existing_db.openConnection()
 
     def testConnectionCreated(self):

@@ -1,1 +1,2 @@
 include README.md
+recursive-include ayx/compiled_modules *.pyd

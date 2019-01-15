@@ -18,31 +18,31 @@ from ayx.CachedData import CachedData
 from ayx.tests.testdata.datafiles import getTestFileName
 from pathlib import Path
 
-class TestCachedDataRead(TestCase):
 
+class TestCachedDataRead(TestCase):
     def setUp(self):
         self.data = CachedData()
 
     def testDefaultConfig(self):
-        expected = ['#1','#2','1']
+        expected = ["#1", "#2", "1", "#3", "#4y", "#4s"]
         actual = self.data.getIncomingConnectionNames()
         self.assertCountEqual(expected, actual)
 
 
 class TestCachedDataSpecificConfig(TestCase):
-
     def setUp(self):
-        config_filepath = getTestFileName('config_valid_2')
+        config_filepath = getTestFileName("config_valid_2")
         self.data = CachedData(config_filepath)
 
     def testSpecificConfig(self):
-        expected = ['VALID2_#1','VALID2_#2','VALID2_1']
+        expected = ["VALID2_#1", "VALID2_#2", "VALID2_1"]
         actual = self.data.getIncomingConnectionNames()
         self.assertCountEqual(expected, actual)
 
+
 class TestNoInputs(TestCase):
     def setUp(self):
-        file = getTestFileName('no_input_data_config')
+        file = getTestFileName("no_input_data_config")
         self.data = CachedData(file)
 
     def testNoInput(self):
@@ -53,7 +53,7 @@ class TestNoInputs(TestCase):
 
 class TestWorkflowConstants(TestCase):
     def setUp(self):
-        self.data  = CachedData()
+        self.data = CachedData()
 
     def testGetStringConstant(self):
         result = self.data.getWorkflowConstant("Engine.GuiInteraction")
@@ -76,7 +76,9 @@ class TestWorkflowConstants(TestCase):
         self.assertRaises(LookupError, self.data.getWorkflowConstant, "IterationNumber")
 
     def testNonexistentConstant(self):
-        self.assertRaises(ReferenceError, self.data.getWorkflowConstant, "Not A Constant")
+        self.assertRaises(
+            ReferenceError, self.data.getWorkflowConstant, "Not A Constant"
+        )
 
     def testPathStringConstant(self):
         win_dir = self.data.getWorkflowConstant("Engine.ModuleDirectory")
