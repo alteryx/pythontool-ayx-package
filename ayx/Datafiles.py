@@ -565,14 +565,31 @@ class Datafile:
                 self.connection.go_record(0)
 
                 # get the actual data
-                data = []
-                while True:
-                    row = self.connection.read_record()
-                    if row == []:
-                        break
-                    else:
-                        data.append(row)
-                query_result = pd.DataFrame(data, columns=colnames)
+                try:
+                    # try to load all records at once
+                    num_records = self.connection.get_num_records()
+                    query_result = pd.DataFrame(
+                        self.connection.read_records(num_records), columns=colnames
+                    )
+                except:
+                    # if unable to do that, load one record at a time
+                    data = []
+                    while True:
+                        data.append(self.connection.read_record())
+                        if data[-1] == []:
+                            break
+                    query_result = pd.DataFrame(data, columns=colnames)
+
+                # # if unable to do that, load one record at a time
+                # data = []
+                # while True:
+                #     row = self.connection.read_record()
+                #     if row == []:
+                #         break
+                #     else:
+                #         data.append(row)
+                #
+                # query_result = pd.DataFrame(data, columns=colnames)
 
             else:
                 self.__formatNotSupportedYet()
