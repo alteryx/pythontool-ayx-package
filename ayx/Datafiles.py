@@ -348,10 +348,8 @@ class Datafile:
                 elif self.fileformat.filetype == "yxdb":
                     connection = pyxdb.AlteryxYXDB()
                     connection.open(self.filepath)
-                    connection.read_record()
-                    # now that we've read a record and moved the line pointer
-                    # past the first line, we need to ,move it back
-                    connection.go_record(0)
+                    # test that its a real yxdb file
+                    connection.get_num_records()
                 else:
                     self.__formatNotSupportedYet()
                 return connection
@@ -537,7 +535,7 @@ class Datafile:
             )
             raise
 
-    def getData(self, table=None):
+    def getData(self, table=None, batch_size=1):
         if self.debug:
             print('Attempting to get data from table "{}"'.format(table))
 
@@ -562,23 +560,44 @@ class Datafile:
                 colnames = [col["name"] for col in self.getMetadata()]
                 # reset pointer back to first line
                 self.openConnection()
-                self.connection.go_record(0)
+                num_records = self.connection.get_num_records()
 
-                # get the actual data
-                try:
-                    # try to load all records at once
-                    num_records = self.connection.get_num_records()
-                    query_result = pd.DataFrame(
-                        self.connection.read_records(num_records), columns=colnames
-                    )
-                except:
-                    # if unable to do that, load one record at a time
-                    data = []
-                    while True:
-                        data.append(self.connection.read_record())
-                        if data[-1] == []:
-                            break
-                    query_result = pd.DataFrame(data, columns=colnames)
+                if num_records > 0:
+                    self.connection.go_record(0)
+
+                # get number of records in dataset
+                # read in records in batch
+                i = 0
+                data = [None] * num_records
+                while i < num_records:
+                    if batch_size == 1:
+                        data[i] = self.connection.read_record()
+                    else:
+                        if i + batch_size < num_records:
+                            data[i : i + batch_size] = self.connection.read_records(
+                                batch_size
+                            )
+                        else:
+                            data[i:] = self.connection.read_records(num_records - i)
+                    i += batch_size
+
+                query_result = pd.DataFrame(data, columns=colnames)
+
+                # # get the actual data
+                # try:
+                #     # try to load all records at once
+                #     num_records = self.connection.get_num_records()
+                #     query_result = pd.DataFrame(
+                #         self.connection.read_records(num_records), columns=colnames
+                #     )
+                # except:
+                #     # if unable to do that, load one record at a time
+                #     data = []
+                #     while True:
+                #         data.append(self.connection.read_record())
+                #         if data[-1] == []:
+                #             break
+                #     query_result = pd.DataFrame(data, columns=colnames)
 
                 # # if unable to do that, load one record at a time
                 # data = []
@@ -610,7 +629,7 @@ class Datafile:
             )
             raise
 
-    def writeData(self, pandas_df, table, metadata=None):
+    def writeData(self, pandas_df, table, metadata=None, batch_size=1):
         if self.debug:
             print(
                 '[CachedData.writeData] Attempting to write data to table "{}"'.format(
@@ -717,6 +736,7 @@ class Datafile:
                     row_count = pandas_df.shape[0]
                     if self.debug:
                         print("[Datafile.writeData] row count: {}".format(row_count))
+                    rows_i = 0
                     for i in range(row_count):
                         if self.debug:
                             print("[Datafile.writeData] i: {}".format(i))
@@ -732,7 +752,17 @@ class Datafile:
                                     builtins, column_conversions[col_i]
                                 )(row[col_i])
 
-                        self.connection.append_record(row)
+                        if batch_size == 1:
+                            self.connection.append_record(row)
+                        else:
+                            if rows_i == 0:
+                                rows = [None] * batch_size
+                            rows[rows_i] = row
+                            rows_i += 1
+                            if rows_i == batch_size:
+                                self.connection.append_records(rows)
+                            elif i == row_count - 1:
+                                self.connection.append_records(rows[:rows_i])
                 except:
                     raise
                 finally:
