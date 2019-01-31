@@ -183,7 +183,7 @@ class CachedData:
             val = self.config.constant_map[constant_name]
             return val
 
-    def read(self, incoming_connection_name):
+    def read(self, incoming_connection_name, batch_size=1):
 
         if self.debug:
             print(
@@ -207,7 +207,7 @@ class CachedData:
             msg_action = 'reading input data "{}"'.format(incoming_connection_name)
             try:
                 # get the data from the sql db (if only one table exists, no need to specify the table name)
-                data = db.getData()
+                data = db.getData(batch_size=batch_size)
                 # print success message
                 print("".join(["SUCCESS: ", msg_action]))
                 # return the data
@@ -272,7 +272,7 @@ class CachedData:
             {"Plot": {"type": "V_String", "length": 2147483647}},
         )
 
-    def write(self, pandas_df, outgoing_connection_number, columns=None):
+    def write(self, pandas_df, outgoing_connection_number, batch_size=1, columns=None):
 
         if self.debug:
             print(
@@ -433,9 +433,7 @@ class CachedData:
             if col_type_length is not None:
                 try:
                     db_col_metadata = metadata_tools.convertTypeString(
-                        col_type_length,
-                        from_context=from_context,
-                        to_context=to_context,
+                        col_type_length, from_context=to_context, to_context=to_context
                     )
                     db_col_type_only = db_col_metadata["type"]
                     db_col_length_only = db_col_metadata["length"]
@@ -464,12 +462,12 @@ class CachedData:
                             )
                         )
                 except:
-
-                    print(
-                        '[CachedData.write] unable to convert {} ("{}") from {} to {} -> skipping'.format(
-                            colname, col_type_length, from_context, to_context
+                    if self.debug:
+                        print(
+                            '[CachedData.write] unable to convert {} ("{}") from {} to {} -> skipping'.format(
+                                colname, col_type_length, from_context, to_context
+                            )
                         )
-                    )
 
         if len(write_metadata.keys()) == 0:
             write_metadata = None
@@ -497,7 +495,12 @@ class CachedData:
             )
             try:
                 # get the data from the sql db (if only one table exists, no need to specify the table name)
-                data = db.writeData(pandas_df_out, "data", metadata=write_metadata)
+                data = db.writeData(
+                    pandas_df_out,
+                    "data",
+                    metadata=write_metadata,
+                    batch_size=batch_size,
+                )
                 # print success message
                 print("".join(["SUCCESS: ", msg_action]))
                 # return the data

@@ -18,6 +18,6 @@ set_wd()
 
 import sys, os
 
-dll_path = "S:\\Alteryx\\bin_x64\\Debug"
+dll_path = "S:\\Alteryx\\bin_x64\\Release"
 sys.path.insert(0, dll_path)
 os.environ["path"] += dll_path

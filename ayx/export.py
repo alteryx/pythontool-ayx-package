@@ -26,11 +26,13 @@ def help(debug=None, **kwargs):
     __Help__(debug=debug).display()
 
 
-def read(incoming_connection_name, debug=None, **kwargs):
+def read(incoming_connection_name, batch_size=1, debug=None, **kwargs):
     """
     When running the workflow in Alteryx, this function will convert incoming data streams to pandas dataframes when executing the code written in the Python tool. When called from the Jupyter notebook interactively, it will read in a copy of the incoming data that was cached on the previous run of the Alteryx workflow.
     """
-    return __CachedData__(debug=debug).read(incoming_connection_name, **kwargs)
+    return __CachedData__(debug=debug).read(
+        incoming_connection_name, batch_size=batch_size, **kwargs
+    )
 
 
 def readMetadata(incoming_connection_name, debug=None, **kwargs):
@@ -78,12 +80,23 @@ def readMetadata(incoming_connection_name, debug=None, **kwargs):
     return __CachedData__(debug=debug).readMetadata(incoming_connection_name, **kwargs)
 
 
-def write(pandas_df, outgoing_connection_number, columns=None, debug=None, **kwargs):
+def write(
+    pandas_df,
+    outgoing_connection_number,
+    columns=None,
+    batch_size=1,
+    debug=None,
+    **kwargs
+):
     """
     When running the workflow in Alteryx, this function will convert a pandas data frame to an Alteryx data stream and pass it out through one of the tool's five output anchors. When called from the Jupyter notebook interactively, it will display a preview of the pandas dataframe. An optional 'columns' argument allows column metadata to specify the field type, length, and name of columns in the output data stream.
     """
     return __CachedData__(debug=debug).write(
-        pandas_df, outgoing_connection_number, columns=columns, **kwargs
+        pandas_df,
+        outgoing_connection_number,
+        columns=columns,
+        batch_size=batch_size,
+        **kwargs
     )
 
 
@@ -138,6 +151,7 @@ def installPackage(package, install_type=None, debug=None, **kwargs):
     This function will install a package or list of packages into the virtual environment used by the Python tool. If using an admin installation of Alteryx, you must run Alteryx as administrator in order to use this function and install packages.
     """
     __installPackages__(package, install_type=install_type, debug=debug, **kwargs)
+
 
 # these are the same function.
 installPackages = installPackage
